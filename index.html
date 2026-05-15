@@ -654,10 +654,17 @@ function finishFakeInnerProgress() {
 
   note.textContent = "Az eredmény elkészült, az oldal megnyitható.";
 
-  btn.onclick = () => {
-    window.location.href = "belsomeres.html";
-  };
-}
+btn.onclick = () => {
+
+  if (!sessionStorage.getItem("step_summary_done")) {
+    alert("A teljes elemzés még nem készült el.");
+    return;
+  }
+
+  window.location.href = "belsomeres.html";
+};
+  }
+
 
 function stopFakeInnerProgress() {
   if (innerFakeTimer) {
@@ -919,9 +926,15 @@ function setStepDone(step) {
 
   note.textContent = "Az eredmény elkészült, az oldal megnyitható.";
 
-  btn.onclick = () => {
-    window.location.href = step.targetPage;
-  };
+btn.onclick = () => {
+
+  if (!sessionStorage.getItem("step_summary_done")) {
+    alert("A teljes elemzés még nem készült el.");
+    return;
+  }
+
+  window.location.href = step.targetPage;
+};
 }
 
 function clearStepStorage() {
@@ -1442,28 +1455,28 @@ console.log("BELSŐ MÉRÉS IDŐADAT:", {
 
 checkStatusBtn.addEventListener("click", () => {
 
-  if (sessionStorage.getItem("analysis_running") === "1") {
-    alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
+  if (!sessionStorage.getItem("step_summary_done")) {
+    alert("A teljes elemzés még nem készült el.");
     return;
   }
 
   window.location.href = "ellenor.html";
 });
 
-depthStatusBtn.addEventListener("click", () => {
+ depthStatusBtn.addEventListener("click", () => {
 
-  if (sessionStorage.getItem("analysis_running") === "1") {
-    alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
+  if (!sessionStorage.getItem("step_summary_done")) {
+    alert("A teljes elemzés még nem készült el.");
     return;
   }
 
   window.location.href = "melyseg.html";
 });
 
-summaryStatusBtn.addEventListener("click", () => {
+ summaryStatusBtn.addEventListener("click", () => {
 
-  if (sessionStorage.getItem("analysis_running") === "1") {
-    alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
+  if (!sessionStorage.getItem("step_summary_done")) {
+    alert("A teljes elemzés még nem készült el.");
     return;
   }
 
