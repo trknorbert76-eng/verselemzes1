@@ -396,6 +396,10 @@ font-family: "Courier New", monospace;
 
 
 <script>
+
+  if (localStorage.getItem("paid_access_ok") !== "1") {
+  window.location.href = "belepes.html";
+}
 const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
 const DEPTH_WORKER_URL = "https://melyseg-depth-public.trknorbert76.workers.dev";
 const IMPACT_WORKER_URL = "https://hatas-depth-public.trknorbert76.workers.dev";
