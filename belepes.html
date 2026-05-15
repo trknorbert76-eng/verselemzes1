@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Belépés</title>
+
+<style>
+body{
+  margin:0;
+  background:#111;
+  color:#eee;
+  font-family:Georgia,serif;
+}
+
+.wrap{
+  max-width:520px;
+  margin:80px auto;
+  padding:30px 20px;
+}
+
+.card{
+  background:#1a1a1a;
+  border:1px solid #333;
+  border-radius:16px;
+  padding:24px;
+}
+
+h1{
+  margin-top:0;
+  color:#d6b36a;
+}
+
+.intro{
+  color:#bbb;
+  line-height:1.6;
+  margin-bottom:24px;
+}
+
+input{
+  width:100%;
+  box-sizing:border-box;
+  padding:14px;
+  border-radius:10px;
+  border:1px solid #444;
+  background:#111;
+  color:#eee;
+  font-size:1rem;
+  margin-bottom:16px;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  background:#d6b36a;
+  color:#111;
+  font-weight:bold;
+  font-size:1rem;
+  cursor:pointer;
+}
+
+.error{
+  margin-top:16px;
+  color:#ff9b9b;
+}
+
+.ok{
+  margin-top:16px;
+  color:#b7efb7;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+  <div class="card">
+
+    <h1>Belépés</h1>
+
+    <div class="intro">
+      Add meg a hozzáférési kódodat.
+    </div>
+
+    <input
+      type="text"
+      id="codeInput"
+      placeholder="Belépőkód"
+    />
+
+    <button id="loginBtn">
+      Belépés
+    </button>
+
+    <div id="message"></div>
+
+  </div>
+</div>
+
+<script>
+const VALID_CODE = "NORBI-2026";
+
+const codeInput = document.getElementById("codeInput");
+const loginBtn = document.getElementById("loginBtn");
+const message = document.getElementById("message");
+
+loginBtn.addEventListener("click", () => {
+
+  const code = codeInput.value.trim();
+
+  if (code === VALID_CODE) {
+
+    localStorage.setItem("paid_access_ok", "1");
+
+    message.className = "ok";
+    message.textContent = "Belépés sikeres...";
+
+    setTimeout(() => {
+      window.location.href = "index.html";
+    }, 700);
+
+  } else {
+
+    message.className = "error";
+    message.textContent = "Hibás belépőkód.";
+
+  }
+
+});
+</script>
+
+</body>
+</html>
