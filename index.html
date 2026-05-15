@@ -1483,7 +1483,13 @@ checkStatusBtn.addEventListener("click", () => {
   window.location.href = "osszegzes.html";
 });
 
-  logoutBtn.addEventListener("click", () => {
+logoutBtn.addEventListener("click", () => {
+
+  if (!sessionStorage.getItem("step_summary_done") && sessionStorage.getItem("analysis_running") === "1") {
+    alert("Az elemzés még fut. Kilépni csak az összegzés után lehet.");
+    return;
+  }
+
   localStorage.removeItem("paid_access_ok");
   sessionStorage.clear();
   window.location.href = "belepes.html";
