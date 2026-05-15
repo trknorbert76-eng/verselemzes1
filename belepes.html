@@ -84,7 +84,12 @@ button{
       Add meg a hozzáférési kódodat.
     </div>
 
-    <input
+   <input
+  type="email"
+  id="emailInput"
+  placeholder="Email címed"
+/>
+     <input
       type="text"
       id="codeInput"
       placeholder="Belépőkód"
@@ -108,16 +113,25 @@ const VALID_CODES = [
 ];
 
 const codeInput = document.getElementById("codeInput");
+  const emailInput = document.getElementById("emailInput");
 const loginBtn = document.getElementById("loginBtn");
 const message = document.getElementById("message");
 
 loginBtn.addEventListener("click", () => {
 
-  const code = codeInput.value.trim();
+  const email = emailInput.value.trim();
+const code = codeInput.value.trim();
+
+if (!email || !email.includes("@")) {
+  message.className = "error";
+  message.textContent = "Adj meg egy érvényes email címet.";
+  return;
+}
 
   if (VALID_CODES.includes(code)) {
 
     localStorage.setItem("paid_access_ok", "1");
+    localStorage.setItem("user_email", email);
 
     message.className = "ok";
     message.textContent = "Belépés sikeres...";
