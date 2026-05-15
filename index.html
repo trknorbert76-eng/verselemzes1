@@ -1440,17 +1440,32 @@ console.log("BELSŐ MÉRÉS IDŐADAT:", {
 }
 
 
- checkStatusBtn.addEventListener("click", () => {
-window.location.href = "ellenor.html";
+checkStatusBtn.addEventListener("click", () => {
+  if (sessionStorage.getItem("analysis_running") === "1") {
+    alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
+    return;
+  }
+
+  window.location.href = "ellenor.html";
 });
 
 depthStatusBtn.addEventListener("click", () => {
+  if (sessionStorage.getItem("analysis_running") === "1") {
+    alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
+    return;
+  }
+
   window.location.href = "melyseg.html";
 });
 
- summaryStatusBtn.addEventListener("click", () => {
+summaryStatusBtn.addEventListener("click", () => {
+  if (sessionStorage.getItem("analysis_running") === "1") {
+    alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
+    return;
+  }
+
   window.location.href = "osszegzes.html";
-}); 
+});
 
   logoutBtn.addEventListener("click", () => {
   localStorage.removeItem("paid_access_ok");
@@ -1511,6 +1526,7 @@ async function runStepWithUi(step, task) {
 
 analyzeBtn.addEventListener("click", async () => {
   const poem = poemInput.value.trim();
+ sessionStorage.setItem("analysis_running", "1");
 
   const fullStartedAt = performance.now();
 
@@ -1738,6 +1754,7 @@ appendRunnerInfo("Összegzés kész.");
 updateSummaryStatus();
 
     showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
+   sessionStorage.removeItem("analysis_running");
     stopEstimateTimer();
 estimateTimer.textContent = "00:00,00";
     const fullEndedAt = performance.now();
@@ -1754,6 +1771,7 @@ console.log("TELJES ELEMZÉS IDŐADAT:", {
      stopFakeInnerProgress();
   console.error("INDEX HIBA:", err);
   showError(err.message || "Nem sikerült kapcsolódni az elemzőhöz.");
+   sessionStorage.removeItem("analysis_running");
     stopEstimateTimer();
 
   } finally {
