@@ -100,7 +100,12 @@ button{
 </div>
 
 <script>
-const VALID_CODE = "NORBI-2026";
+const VALID_CODES = [
+  "NORBI-2026",
+  "TESZT-001",
+  "TESZT-002",
+  "TESZT-003"
+];
 
 const codeInput = document.getElementById("codeInput");
 const loginBtn = document.getElementById("loginBtn");
@@ -110,7 +115,7 @@ loginBtn.addEventListener("click", () => {
 
   const code = codeInput.value.trim();
 
-  if (code === VALID_CODE) {
+  if (VALID_CODES.includes(code)) {
 
     localStorage.setItem("paid_access_ok", "1");
 
