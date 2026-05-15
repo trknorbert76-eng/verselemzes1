@@ -300,6 +300,7 @@ font-family: "Courier New", monospace;
   <button id="checkStatusBtn" class="secondary">Ellenőr: nincs</button>
   <button id="depthStatusBtn" class="secondary">Hatás + mélység: nincs</button>
   <button id="summaryStatusBtn" class="secondary">Összegzés: nincs</button>
+   <button id="logoutBtn" class="secondary">Kilépés</button>
 </div>
 
   <div class="statusBox errorBox" id="errorBox"></div>
@@ -411,6 +412,7 @@ const analyzeBtn = document.getElementById("analyzeBtn");
 const checkStatusBtn = document.getElementById("checkStatusBtn");
 const depthStatusBtn = document.getElementById("depthStatusBtn");
 const summaryStatusBtn = document.getElementById("summaryStatusBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
 const poemInput = document.getElementById("poemInput");
 const errorBox = document.getElementById("errorBox");
 const okBox = document.getElementById("okBox");
@@ -1420,6 +1422,12 @@ depthStatusBtn.addEventListener("click", () => {
  summaryStatusBtn.addEventListener("click", () => {
   window.location.href = "osszegzes.html";
 }); 
+
+  logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("paid_access_ok");
+  sessionStorage.clear();
+  window.location.href = "belepes.html";
+});
 
 function readJSON(key) {
   try {
