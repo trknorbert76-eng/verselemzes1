@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Összegzés</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: Georgia, serif;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: auto;
+      padding: 30px 20px 60px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .intro {
+      color: #bbb;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #d6b36a;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button.secondary {
+      background: #2b2b2b;
+      color: #eee;
+      border: 1px solid #444;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 18px;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #d6b36a;
+      font-size: 1.12rem;
+    }
+
+    .summary {
+      line-height: 1.7;
+      color: #ddd;
+    }
+
+    .level-text {
+      margin-top: 14px;
+      font-size: 1.12rem;
+      color: #fff;
+    }
+
+    .scale {
+      position: relative;
+      margin-top: 28px;
+      padding-top: 18px;
+    }
+
+    .bar {
+      height: 8px;
+      background: linear-gradient(
+        to right,
+        #ff4d4d,
+        #ff944d,
+        #ffd24d,
+        #4dff88,
+        #4da6ff
+      );
+      border-radius: 999px;
+    }
+
+    .labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.82rem;
+      margin-top: 12px;
+      color: #aaa;
+    }
+
+    .labels span {
+      text-align: center;
+      flex: 1;
+    }
+
+    .pointer {
+      position: absolute;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-left: 9px solid transparent;
+      border-right: 9px solid transparent;
+      border-bottom: 14px solid #fff;
+      transform: translateX(-50%);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .valueBox {
+      background: #141414;
+      border: 1px solid #2c2c2c;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #eee;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .poemText {
+      white-space: pre-wrap;
+      line-height: 1.7;
+      color: #ddd;
+    }
+
+    .errorBox {
+      display: none;
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      background: #2a1616;
+      border: 1px solid #6a2c2c;
+      color: #f0c7c7;
+    }
+
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .labels {
+        font-size: 0.72rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Összegzés</h1>
+
+<div class="topbar">
+  <button onclick="goBack()">← Vissza</button>
+  <button type="button" class="secondary" onclick="window.location.href='melyseg.html'">Mélység</button>
+  <button class="secondary" onclick="window.location.href='ertelmezes.html'">Értelmezés →</button>
+
+  <button class="secondary" onclick="window.location.href='belsomeres.html'">
+    Belső mérés →
+  </button>
+
+  <button onclick="newPoem()">Új vers</button>
+</div>
+
+    <p class="intro">
+      Ez az utolsó oldal. Itt az előző lépések eredményei egy közös mérlegben találkoznak:
+      nem pontszámot adunk, hanem megmutatjuk, hol helyezkedik el a vers a teljes skálán.
+    </p>
+
+    <div class="errorBox" id="errorBox"></div>
+
+    <div class="card">
+      <h2>Összkép</h2>
+      <div class="summary" id="summary">Betöltés...</div>
+      <div class="level-text" id="levelText"></div>
+
+      <div class="scale">
+        <div class="bar"></div>
+        <div class="pointer" id="pointer"></div>
+
+        <div class="labels">
+          <span>Közhelyes</span>
+          <span>Vegyes</span>
+          <span>Egyedi</span>
+          <span>Erős</span>
+          <span>Kiemelkedő</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Stílus</h2>
+
+      <div class="grid">
+        <div>
+          <div style="color:#c9b07a; margin-bottom:8px;">Stílusjelleg</div>
+          <div class="valueBox" id="styleLabel">—</div>
+        </div>
+
+        <div>
+          <div style="color:#c9b07a; margin-bottom:8px;">Stílusjegyek</div>
+          <div class="valueBox" id="styleTraits">—</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="color:#c9b07a; margin-bottom:8px;">Stílus indoklása</div>
+        <div class="valueBox" id="styleReasoning">—</div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div style="color:#c9b07a; margin-bottom:8px;">Ellenőrzés</div>
+
+        <div class="grid">
+          <div>
+            <div style="color:#aaa; margin-bottom:6px;">Ellenőr megállapítása</div>
+            <div class="valueBox" id="reviewText">—</div>
+          </div>
+
+          <div>
+            <div style="color:#aaa; margin-bottom:6px;">Korrekció</div>
+            <div class="valueBox" id="reviewAdjustment">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Mi emeli</h2>
+        <div class="valueBox" id="strengths">—</div>
+      </div>
+
+      <div class="card">
+        <h2>Mi gyengíti</h2>
+        <div class="valueBox" id="weaknesses">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>A vizsgált vers</h2>
+      <div class="poemText" id="poemText">—</div>
+    </div>
+  </div>
+  
+<script>
+  function safeParse(text) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  function unwrapPack(pack) {
+    if (!pack) return null;
+    return pack.result || pack;
+  }
+
+  function getStoredPack(key) {
+    return safeParse(sessionStorage.getItem(key) || "");
+  }
+
+  function getStoredResult(key) {
+    return unwrapPack(getStoredPack(key));
+  }
+
+  function hasAny(text, phrases) {
+    const t = String(text || "").toLowerCase();
+    return phrases.some(p => t.includes(p));
+  }
+
+  const errorBox = document.getElementById("errorBox");
+  const summaryEl = document.getElementById("summary");
+  const levelTextEl = document.getElementById("levelText");
+  const pointerEl = document.getElementById("pointer");
+  const strengthsEl = document.getElementById("strengths");
+  const weaknessesEl = document.getElementById("weaknesses");
+  const poemTextEl = document.getElementById("poemText");
+  const styleLabelEl = document.getElementById("styleLabel");
+  const styleTraitsEl = document.getElementById("styleTraits");
+  const styleReasoningEl = document.getElementById("styleReasoning");
+  const reviewTextEl = document.getElementById("reviewText");
+  const reviewAdjustmentEl = document.getElementById("reviewAdjustment");
+
+  const poem = sessionStorage.getItem("poem");
+  const kind = getStoredResult("analysis_kind");
+  const structure = getStoredResult("analysis_structure");
+  const rhythm = getStoredResult("analysis_rhythm");
+  const images = getStoredResult("analysis_images");
+  const expression = getStoredResult("analysis_expression");
+  const depth = getStoredResult("analysis_depth");
+  const check = getStoredResult("analysis_check");
+
+ if (!poem || !kind || !structure || !rhythm || !images || !expression || !depth) {
+  showError("Hiányoznak az elemzés adatai.");
+  sessionStorage.setItem("step_summary_done", Date.now().toString());
+} else {
+  renderSummary();
+}
+
+  function showError(message) {
+    errorBox.textContent = message;
+    errorBox.style.display = "block";
+  }
+
+  function renderSummary() {
+    poemTextEl.textContent = poem;
+
+    styleLabelEl.textContent = kind.style_label || "Nincs megadva";
+    styleTraitsEl.textContent =
+      Array.isArray(kind.style_traits) && kind.style_traits.length
+        ? kind.style_traits.join(", ")
+        : "Nincs megadva";
+    styleReasoningEl.textContent = kind.style_reasoning || "Nincs külön indoklás.";
+
+  const finalScore = Number(check?.final_score);
+
+if (Number.isNaN(finalScore)) {
+  showError("Nincs végső pontszám az ellenőrzésből.");
+  sessionStorage.setItem("step_summary_done", Date.now().toString());
+  return;
+}
+
+    const finalLevel = getLevelFromScore(finalScore);
+
+    summaryEl.textContent = buildSummary(kind, structure, rhythm, images, expression, finalLevel, check);
+    levelTextEl.textContent = "Szint: " + finalLevel.label;
+    pointerEl.style.left = finalScore + "%";
+
+    const strengths = buildStrengths(kind, structure, rhythm, images, expression, check);
+    const weaknesses = buildWeaknesses(kind, structure, rhythm, images, expression, check);
+
+    strengthsEl.textContent = strengths.length
+      ? strengths.join("\n• ").replace(/^/, "• ")
+      : "—";
+
+    weaknessesEl.textContent = weaknesses.length
+      ? weaknesses.join("\n• ").replace(/^/, "• ")
+      : "—";
+
+    renderReview(check);
+
+    sessionStorage.setItem("step_summary_done", Date.now().toString());
+  }
+
+  function renderReview(checkData) {
+    if (!checkData) {
+      reviewTextEl.textContent = "Nincs végső ellenőrzés.";
+      reviewAdjustmentEl.textContent = "Nincs korrekció.";
+      return;
+    }
+
+    reviewTextEl.textContent = [
+      checkData.own_impression || "",
+      checkData.own_reasoning || "",
+      checkData.agreement_points || "",
+      checkData.mismatch_points || ""
+    ]
+      .filter(Boolean)
+      .join("\n\n") || "Nincs részletes ellenőrzés.";
+
+    const direction = String(checkData.correction_direction || "").trim().toLowerCase();
+    const distortion = String(checkData.distortion_direction || "").trim();
+
+    if (direction === "feljebb") {
+      reviewAdjustmentEl.textContent =
+        `A végső ellenőrzés felfelé módosította a besorolást. (${distortion}) ${checkData.correction_reason || ""}`.trim();
+    } else if (direction === "lejjebb") {
+      reviewAdjustmentEl.textContent =
+        `A végső ellenőrzés lefelé módosította a besorolást. (${distortion}) ${checkData.correction_reason || ""}`.trim();
+    } else {
+      reviewAdjustmentEl.textContent =
+        checkData.correction_reason
+          ? `Nem történt szintkorrekció. ${checkData.correction_reason}`
+          : "Nem történt szintkorrekció.";
+    }
+  }
+
+  function getLevelFromScore(score) {
+    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+
+    if (safeScore <= 19) {
+      return { key: "közhelyes", label: "közhelyes működés", position: safeScore };
+    }
+    if (safeScore <= 39) {
+      return { key: "vegyes", label: "vegyes / közepes", position: safeScore };
+    }
+    if (safeScore <= 59) {
+      return { key: "részben egyedi", label: "részben egyedi", position: safeScore };
+    }
+    if (safeScore <= 79) {
+      return { key: "erős", label: "erős", position: safeScore };
+    }
+    return { key: "kiemelkedő", label: "kiemelkedő", position: safeScore };
+  }
+
+ function applyImpactBoost(score, checkData, expression, structure, depthData) {
+    if (!detectImpactBoost(checkData, expression, structure, depthData)) {
+      return score;
+    }
+
+    return Math.min(100, score + 8);
+  }
+
+   function buildSummary(kind, structure, rhythm, images, expression, level, checkData) {
+    const parts = [];
+
+    if (images.imagery_presence === "erősen képszerű") {
+      parts.push("A vers erősen képi módon működik");
+    } else if (images.imagery_presence === "mérsékelten képszerű") {
+      parts.push("A vers részben képekre épül");
+    } else {
+      parts.push("A vers inkább kevésbé képi módon szólal meg");
+    }
+
+    if (structure.structure_type === "statikus") {
+      parts.push("szerkezetileg inkább egy állapotot jár körül");
+    } else if (structure.structure_type === "finoman kibontakozó") {
+      parts.push("szerkezetileg fokozatos elmozdulást mutat");
+    } else if (structure.structure_type === "markánsan fejlődő") {
+      parts.push("szerkezetileg erős belső változást hordoz");
+    }
+
+    if (expression.expression_mode === "felszólító / retorikai") {
+      parts.push("kifejezésmódjában erős, közvetlen retorikai hatással dolgozik");
+    }
+
+    if (expression.overall_expression === "inkább közhelyes") {
+      parts.push("nyelvileg azonban többnyire ismerős, közhelyes elemekre támaszkodik");
+    } else if (expression.overall_expression === "inkább hagyományos") {
+      parts.push("nyelvileg inkább hagyományos, ismert megszólalási mintákra épül");
+    } else if (expression.overall_expression === "vegyes") {
+      parts.push("nyelvileg vegyes képet mutat: vannak működő és kevésbé eredeti megoldásai is");
+    } else {
+      parts.push("nyelvileg több ponton is egyedi, saját hang felé mozdul");
+    }
+
+    let text = parts.join(", ") + ". A teljes összkép alapján a vers " + level.label + " szinten helyezkedik el.";
+
+    if (checkData && checkData.correction_reason) {
+      text += " Az ellenőrző lépés szerint: " + checkData.correction_reason;
+    }
+
+    return text;
+  }
+
+  function buildStrengths(kind, structure, rhythm, images, expression, checkData) {
+    const items = [];
+
+    if (
+      images.imagery_presence === "erősen képszerű" ||
+      images.imagery_presence === "mérsékelten képszerű"
+    ) {
+      items.push("A vers képi világa érzékelhetően jelen van.");
+    }
+
+    if (
+      images.imagery_role === "erősen jelentéshordozó" ||
+      images.imagery_role === "részben jelentéshordozó"
+    ) {
+      items.push("A képek nem pusztán díszítő elemek, hanem jelentést is hordoznak.");
+    }
+
+    if (expression.tone_naturalness === "természetes") {
+      items.push("A megszólalás természetes, nem erőltetett.");
+    }
+
+    if (expression.expression_mode === "felszólító / retorikai") {
+      items.push("A vers kifejezésmódja közvetlen, mozgósító és retorikailag hatásos.");
+    }
+
+    if (
+      expression.originality_of_voice === "saját hangú" ||
+      expression.originality_of_voice === "részben ismerős"
+    ) {
+      items.push("A hangban legalább részben felismerhető saját irány vagy működő egyéni kombináció.");
+    }
+
+    if (
+      structure.structure_type === "finoman kibontakozó" ||
+      structure.structure_type === "markánsan fejlődő"
+    ) {
+      items.push("A vers nem marad teljesen egy helyben, belső mozgást is mutat.");
+    }
+
+    if (checkData && checkData.agreement_points) {
+      items.push(checkData.agreement_points);
+    }
+
+    if (items.length === 0) {
+      items.push("A versnek vannak működő mozzanatai, de ezek nem emelkednek ki erősen.");
+    }
+
+    return items.slice(0, 4);
+  }
+
+  function buildWeaknesses(kind, structure, rhythm, images, expression, checkData) {
+    const items = [];
+
+    if (expression.overall_expression === "inkább közhelyes") {
+      items.push("A nyelvi megoldások nagy része ismerős, közhelyes fordulatokra épül.");
+    }
+
+    if (expression.overall_expression === "inkább hagyományos") {
+      items.push("A megszólalás több ponton a hagyományos költői formulákra támaszkodik.");
+    }
+
+    if (expression.originality_of_voice === "többnyire közhelyes") {
+      items.push("A hang nem tud eléggé elszakadni a megszokott költői formuláktól.");
+    }
+
+    if (expression.precision === "elmosódó" || expression.precision === "részben pontos") {
+      items.push("A megfogalmazás nem minden ponton elég pontos vagy határozott.");
+    }
+
+    if (structure.structure_type === "statikus") {
+      items.push("A szerkezet inkább körüljár egy állapotot, mintsem valódi változást hozna létre.");
+    }
+
+    if (images.originality === "többnyire közismert") {
+      items.push("A képiségben több ismert vagy kevéssé meglepő megoldás jelenik meg.");
+    }
+
+    if (images.imagery_cohesion === "szétszórt") {
+      items.push("A képek nem mindig állnak össze egységes belső világgá.");
+    }
+
+    if (checkData && checkData.mismatch_points) {
+      items.push(checkData.mismatch_points);
+    }
+
+    if (items.length === 0) {
+      items.push("A vers kevés nyilvánvaló gyenge pontot mutat, inkább finomabb árnyalatokban különböznek az egyes rétegek.");
+    }
+
+    return items.slice(0, 4);
+  }
+
+  function goBack() {
+    window.location.href = "ellenor.html";
+  }
+
+  function newPoem() {
+    sessionStorage.clear();
+    window.location.href = "index.html";
+  }
+</script>
+
+</body>
+</html>

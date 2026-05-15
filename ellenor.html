@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ellenőrzés</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Georgia, serif;
+  background: #111;
+  color: #eee;
+}
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 20px 60px;
+}
+
+h1 {
+  font-size: 2.1rem;
+  margin-bottom: 10px;
+}
+
+.intro {
+  color: #bbb;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+button,
+.btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #d6b36a;
+  color: #111;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button.secondary,
+.btn.secondary {
+  background: #2b2b2b;
+  color: #eee;
+  border: 1px solid #444;
+}
+
+.notice {
+  background: #102d12;
+  border: 1px solid #2f8f44;
+  color: #cfeecf;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.grid-top {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.grid-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #171717;
+  border: 1px solid #3a3a3a;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 1.45rem;
+  color: #f0c66c;
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #f0c66c;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.label {
+  display: block;
+  font-size: 0.95rem;
+  color: #d8b25f;
+  margin-bottom: 6px;
+}
+
+.value {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.55;
+  min-height: 22px;
+}
+
+.value.small {
+  min-height: auto;
+}
+
+.poem-box {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 14px;
+  min-height: 360px;
+  max-height: 540px;
+  overflow: auto;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.mini-card {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.mini-card:last-child {
+  margin-bottom: 0;
+}
+
+.mini-title {
+  font-size: 1.05rem;
+  color: #f0c66c;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.two-col-mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.footerbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.status-text {
+  color: #9fd49f;
+  font-size: 0.98rem;
+}
+
+@media (max-width: 900px) {
+  .grid-top,
+  .grid-bottom,
+  .two-col-mini {
+    grid-template-columns: 1fr;
+  }
+
+  .poem-box {
+    min-height: 260px;
+    max-height: none;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ellenőrzés</h1>
+  <div class="intro">
+    Ez a belső ellenőrző oldal először önálló benyomást alkot a versről, majd összeveti azt a korábbi elemző oldalak eredményeivel.
+  </div>
+
+  <div class="topbar">
+    <a href="kifejezesmod.html" class="btn secondary">← Vissza a kifejezésmódhoz</a>
+    <button id="reanalyzeBtn">Újraellenőrzés</button>
+  </div>
+
+  <div id="notice" class="notice" style="display:none;"></div>
+
+  <div class="grid-top">
+    <section class="card">
+      <h2>A vizsgált vers</h2>
+      <div id="poemBox" class="poem-box"></div>
+    </section>
+
+    <section class="card">
+      <h2>Saját vélemény</h2>
+
+      <div class="field">
+        <span class="label">Első benyomás</span>
+        <div id="ownImpression" class="value">Részben működő, hangulatos, de nem minden pontján egyformán erős vers.</div>
+      </div>
+
+      <div class="field">
+        <span class="label">Önálló szintérzet</span>
+        <div id="ownLevel" class="value small">—</div>
+      </div>
+
+      <div class="field">
+        <span class="label">Miért ezt látja</span>
+        <div id="ownReason" class="value">Még nincs ellenőrzési indoklás.</div>
+      </div>
+
+      <div class="field">
+        <span class="label">Biztosság</span>
+        <div id="ownConfidence" class="value small">—</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid-bottom">
+    <section class="card">
+      <h2>Az elemző oldalak eredményei</h2>
+
+      <div class="mini-card">
+        <div class="mini-title">Felismerés</div>
+        <div class="two-col-mini">
+          <div class="field">
+            <span class="label">Fő típus</span>
+            <div id="kindMainType" class="value small">—</div>
+          </div>
+          <div class="field">
+            <span class="label">Hangulat</span>
+            <div id="kindMood" class="value small">—</div>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Stílusjelleg</span>
+          <div id="kindStyle" class="value small">—</div>
+        </div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-title">Szerkezet</div>
+        <div class="field">
+          <span class="label">Szerkezet típusa</span>
+          <div id="structureType" class="value small">—</div>
+        </div>
+        <div class="field">
+          <span class="label">Mozgás</span>
+          <div id="structureMovement" class="value">—</div>
+        </div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-title">Ritmus</div>
+        <div class="field">
+          <span class="label">Ritmus jellege</span>
+          <div id="rhythmType" class="value small">—</div>
+        </div>
+        <div class="field">
+          <span class="label">Lendület</span>
+          <div id="rhythmMovement" class="value small">—</div>
+        </div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-title">Képek</div>
+        <div class="two-col-mini">
+          <div class="field">
+            <span class="label">Képiség</span>
+            <div id="imagesPresence" class="value small">—</div>
+          </div>
+          <div class="field">
+            <span class="label">Eredetiség</span>
+            <div id="imagesOriginality" class="value small">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-title">Kifejezésmód</div>
+        <div class="two-col-mini">
+          <div class="field">
+            <span class="label">Összkép</span>
+            <div id="expressionOverall" class="value small">—</div>
+          </div>
+          <div class="field">
+            <span class="label">Hang egyedisége</span>
+            <div id="expressionVoice" class="value small">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Az ellenőr megítélése</h2>
+
+      <div class="field">
+        <span class="label">Reális-e az eddigi összkép</span>
+        <div id="realisticOverall" class="value small">—</div>
+      </div>
+
+      <div class="field">
+        <span class="label">Mi áll közel a saját olvasathoz</span>
+        <div id="agreementPoints" class="value">Még nincs adat.</div>
+      </div>
+
+      <div class="field">
+        <span class="label">Mi csúszhatott félre</span>
+        <div id="mismatchPoints" class="value">Még nincs adat.</div>
+      </div>
+
+      <div class="field">
+        <span class="label">Torzítás iránya</span>
+        <div id="distortionDirection" class="value small">—</div>
+      </div>
+
+      <div class="field">
+        <span class="label">Korrekció</span>
+        <div id="correctionDecision" class="value small">—</div>
+      </div>
+
+      <div class="field">
+  <span class="label">Belső réteg</span>
+  <div id="innerLayerNote" class="value">
+    —
+  </div>
+</div>
+
+      <div class="field">
+        <span class="label">Indoklás</span>
+        <div id="correctionReason" class="value">Még nincs indoklás.</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="footerbar">
+    <div class="status-text">Ellenőrzés kész. Továbbléphetsz az összegzésre.</div>
+    <a href="osszegzes.html" class="btn">Tovább az összegzésre →</a>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const autorun = params.get("autorun") === "1";
+const WORKER_URL = "https://verskritika.trknorbert76.workers.dev";
+const NEXT_PAGE = "osszegzes.html"; 
+
+const noticeEl = document.getElementById("notice");
+const reanalyzeBtn = document.getElementById("reanalyzeBtn");
+
+function safeParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function readJSON(key) {
+  return safeParse(sessionStorage.getItem(key) || "");
+}
+
+function unwrapPack(pack) {
+  if (!pack) return null;
+  return pack.result || pack;
+}
+
+function setText(id, value, fallback = "—") {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = typeof value === "string" && value.trim() ? value.trim() : fallback;
+  el.textContent = text;
+}
+
+
+function showNotice(message) {
+  noticeEl.textContent = message;
+  noticeEl.style.display = "block";
+}
+
+const poemFallback = "Nincs betöltött vers.";
+
+function fillView() {
+  const poem =
+    sessionStorage.getItem("poemText") ||
+    sessionStorage.getItem("poem") ||
+    poemFallback;
+
+  const kind = unwrapPack(readJSON("analysis_kind")) || {};
+  const structure = unwrapPack(readJSON("analysis_structure")) || {};
+  const rhythm = unwrapPack(readJSON("analysis_rhythm")) || {};
+  const images = unwrapPack(readJSON("analysis_images")) || {};
+  const expression = unwrapPack(readJSON("analysis_expression")) || {};
+
+  const seedCheck = unwrapPack(readJSON("analysis_check_seed")) || null;
+  const finalCheck = unwrapPack(readJSON("analysis_check")) || null;
+
+  setText("poemBox", poem, poemFallback);
+
+  setText("kindMainType", kind.main_type);
+  setText("kindMood", kind.mood);
+  setText("kindStyle", kind.style_label);
+
+  setText("structureType", structure.structure_type);
+  setText("structureMovement", structure.movement);
+
+  setText("rhythmType", rhythm.rhythm_type);
+  setText("rhythmMovement", rhythm.movement);
+
+  setText("imagesPresence", images.imagery_presence);
+  setText("imagesOriginality", images.originality);
+
+  setText("expressionOverall", expression.overall_expression);
+  setText("expressionVoice", expression.originality_of_voice);
+
+  // =========================
+  // JOBB OLDAL: CSAK SEED
+  // =========================
+  setText("ownImpression", seedCheck?.own_impression, "Még nincs első önálló olvasat.");
+  setText("ownLevel", seedCheck?.own_level, "—");
+  setText("ownReason", seedCheck?.own_reasoning, "Még nincs első önálló indoklás.");
+  setText("ownConfidence", seedCheck?.own_confidence, "—");
+
+  // =========================
+  // VÉGSŐ ELLENŐRZÉS: KÜLÖN
+  // =========================
+  setText(
+    "realisticOverall",
+    finalCheck?.realism_check,
+    seedCheck ? "A végső összevetés még nem készült el." : "—"
+  );
+  setText(
+    "agreementPoints",
+    finalCheck?.agreement_points,
+    seedCheck ? "A végső összevetés még nem készült el." : "Még nincs adat."
+  );
+  setText(
+    "mismatchPoints",
+    finalCheck?.mismatch_points,
+    seedCheck ? "A végső összevetés még nem készült el." : "Még nincs adat."
+  );
+  setText(
+    "distortionDirection",
+    finalCheck?.distortion_direction,
+    seedCheck ? "Még nincs végső döntés." : "—"
+  );
+  setText(
+    "correctionDecision",
+    finalCheck?.correction_direction,
+    seedCheck ? "Még nincs végső döntés." : "—"
+  );
+  
+setText(
+  "innerLayerNote",
+  finalCheck?.inner_layer_note,
+  "Nincs belső réteg megjegyzés."
+);
+  
+
+let correctionText = "Még nincs indoklás.";
+if (finalCheck) {
+  const finalLevel = finalCheck.final_level || "—";
+
+  correctionText =
+    `Végső szint: ${finalLevel}. ` +
+    (finalCheck.correction_reason || "Nincs külön indoklás.");
+} else if (seedCheck) {
+  correctionText = "A végső ellenőri indoklás még nem készült el.";
+}
+
+  setText("correctionReason", correctionText, "Még nincs indoklás.");
+}
+
+async function runCheckAnalysis(forceRefresh = false) {
+const poem =
+  sessionStorage.getItem("poem") ||
+  sessionStorage.getItem("poemText");
+  
+
+  const savedKind = readJSON("analysis_kind");
+  const savedStructure = readJSON("analysis_structure");
+  const savedRhythm = readJSON("analysis_rhythm");
+  const savedImages = readJSON("analysis_images");
+  const savedExpression = readJSON("analysis_expression");
+  const savedDepth = readJSON("analysis_depth");
+  const savedImpact = readJSON("analysis_impact");
+  const savedInner =
+  readJSON("analysis_inner_measure") ||
+  readJSON("analysis_inner") ||
+  readJSON("analysis_belso");
+
+  const savedInterpretation =
+  readJSON("analysis_interpretation") ||
+  readJSON("analysis_ertelmezes") ||
+  readJSON("analysis_interpretation_result");
+
+  const kind = unwrapPack(savedKind);
+  const structure = unwrapPack(savedStructure);
+  const rhythm = unwrapPack(savedRhythm);
+  const images = unwrapPack(savedImages);
+  const expression = unwrapPack(savedExpression);
+  const depth = unwrapPack(savedDepth);
+ const impact = unwrapPack(savedImpact) || {};
+  const inner = unwrapPack(savedInner) || null;
+  const interpretation = unwrapPack(savedInterpretation);
+
+  const depthForCheck = depth ? {
+  secondary_layer: depth.secondary_layer,
+  positive_hit: depth.positive_hit,
+  negative_hit: depth.negative_hit,
+  mixed_hit: depth.mixed_hit,
+  depth_level: depth.depth_level,
+  reasoning: depth.reasoning,
+  checker_min_score: depth.checker_min_score,
+  checker_max_score: depth.checker_max_score
+} : null;
+
+  if (!poem) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  if (!kind) {
+    window.location.href = "felismeres.html";
+    return;
+  }
+
+  if (!structure) {
+    window.location.href = "szerkezet.html";
+    return;
+  }
+
+  if (!rhythm) {
+    window.location.href = "ritmus.html";
+    return;
+  }
+
+  if (!images) {
+    window.location.href = "kepek.html";
+    return;
+  }
+
+  if (!expression) {
+    window.location.href = "kifejezesmod.html";
+    return;
+  }
+
+  if (!depth) {
+    window.location.href = "melyseg.html";
+    return;
+  }
+
+  if (!inner || inner.overall_score === undefined || inner.overall_score === null) {
+  showNotice("A belső mérés még nem készült el, várok rá...");
+  setTimeout(() => runCheckAnalysis(forceRefresh), 1500);
+  return;
+}
+
+fillView();
+
+const existingFinalCheck = unwrapPack(readJSON("analysis_check"));
+
+if (!existingFinalCheck) {
+  sessionStorage.removeItem("step_check_done");
+  sessionStorage.removeItem("step_summary_done");
+}
+
+if (!forceRefresh) {
+  const savedSeed = unwrapPack(readJSON("analysis_check_seed"));
+  const savedCheck = unwrapPack(readJSON("analysis_check"));
+
+  if (
+    savedSeed &&
+    savedCheck &&
+    inner &&
+    Number(savedCheck.inner_score) === Number(inner.overall_score) &&
+    savedCheck.inner_adjustment !== undefined
+  ) {
+    sessionStorage.setItem("step_check_done", Date.now().toString());
+    fillView();
+    showNotice("A korábbi ellenőrzési eredmény betöltve.");
+    return;
+  }
+
+  if (
+    savedCheck &&
+    inner &&
+    (
+      Number(savedCheck.inner_score) !== Number(inner.overall_score) ||
+      savedCheck.inner_adjustment === undefined
+    )
+  ) {
+    sessionStorage.removeItem("analysis_check");
+    sessionStorage.removeItem("step_check_done");
+  }
+
+  if (savedSeed && !unwrapPack(readJSON("analysis_check"))) {
+    fillView();
+    showNotice("Az első önálló olvasat betöltve, most készül a végső összevetés...");
+  }
+}
+
+
+reanalyzeBtn.disabled = true;
+  try {
+    // ==================================
+    // 1. SEED - TISZTA ELSŐ OLVASAT
+    // ==================================
+  let seedResult = !forceRefresh
+  ? unwrapPack(readJSON("analysis_check_seed"))
+  : null;
+
+if (!seedResult) {
+  showNotice("Az ellenőr első önálló olvasata készül...");
+
+  const seedRes = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+  poem,
+  step: "check_seed",
+  previous: {
+    interpretation
+  }
+})
+    });
+
+    const seedData = await seedRes.json();
+
+    if (!seedRes.ok || !seedData.ok) {
+      throw new Error(seedData.error || "A seed ellenőrzés nem sikerült.");
+    }
+
+  seedResult = seedData.result;
+sessionStorage.setItem("analysis_check_seed", JSON.stringify(seedResult));
+sessionStorage.setItem("step_check_seed_done", Date.now().toString());
+fillView();
+
+} else {
+  fillView();
+  showNotice("A korábbi első olvasat betöltve, készül a végső összevetés...");
+}
+
+    // ==================================
+    // 2. CHECK - ÖSSZEVETÉS
+    // ==================================
+    showNotice("A végső összevető ellenőrzés készül...");
+
+    const checkRes = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        poem,
+        step: "check",
+previous: {
+  kind,
+  interpretation,
+  structure,
+  rhythm,
+  images,
+  expression,
+  depth: depthForCheck,
+  impact,
+  inner,
+  seed: seedResult
+}
+      })
+    });
+
+    const checkData = await checkRes.json();
+
+    if (!checkRes.ok || !checkData.ok) {
+      throw new Error(checkData.error || "A végső ellenőrzés nem sikerült.");
+    }
+
+    const finalCheckResult = checkData.result;
+
+const rangeMin = Number(depth?.checker_min_score ?? 0);
+const rangeMax = Number(depth?.checker_max_score ?? 100);
+
+finalCheckResult.score_range_min = rangeMin;
+finalCheckResult.score_range_max = rangeMax;
+
+    sessionStorage.setItem("analysis_check", JSON.stringify(finalCheckResult));
+    sessionStorage.setItem("step_check_done", Date.now().toString());
+
+  fillView();
+showNotice("Az ellenőrzés elkészült.");
+
+if (autorun && !forceRefresh) {
+  window.location.href = NEXT_PAGE + "?autorun=1";
+}
+
+
+  } catch (err) {
+    showNotice("Hiba történt az ellenőrzés során: " + (err.message || "ismeretlen hiba"));
+  } finally {
+    reanalyzeBtn.disabled = false;
+  }
+}
+
+reanalyzeBtn.addEventListener("click", () => {
+  sessionStorage.removeItem("analysis_check_seed");
+  sessionStorage.removeItem("analysis_check");
+  sessionStorage.removeItem("step_check_done");
+  runCheckAnalysis(true);
+});
+setInterval(() => {
+  const seed = unwrapPack(readJSON("analysis_check_seed"));
+  const check = unwrapPack(readJSON("analysis_check"));
+
+  if (seed || check) {
+    fillView();
+  }
+}, 1000);
+runCheckAnalysis(false);
+</script>
+</body>
+</html>
