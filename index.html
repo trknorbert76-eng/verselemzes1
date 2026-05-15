@@ -1441,6 +1441,7 @@ console.log("BELSŐ MÉRÉS IDŐADAT:", {
 
 
 checkStatusBtn.addEventListener("click", () => {
+
   if (sessionStorage.getItem("analysis_running") === "1") {
     alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
     return;
@@ -1450,6 +1451,7 @@ checkStatusBtn.addEventListener("click", () => {
 });
 
 depthStatusBtn.addEventListener("click", () => {
+
   if (sessionStorage.getItem("analysis_running") === "1") {
     alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
     return;
@@ -1459,6 +1461,7 @@ depthStatusBtn.addEventListener("click", () => {
 });
 
 summaryStatusBtn.addEventListener("click", () => {
+
   if (sessionStorage.getItem("analysis_running") === "1") {
     alert("Az elemzés még fut. Várd meg, amíg teljesen elkészül.");
     return;
