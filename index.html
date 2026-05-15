@@ -300,6 +300,7 @@ font-family: "Courier New", monospace;
   <button id="checkStatusBtn" class="secondary">Ellenőr: nincs</button>
   <button id="depthStatusBtn" class="secondary">Hatás + mélység: nincs</button>
   <button id="summaryStatusBtn" class="secondary">Összegzés: nincs</button>
+  <button id="userBtn" class="secondary">Felhasználó</button>
    <button id="logoutBtn" class="secondary">Kilépés</button>
 </div>
 
@@ -413,6 +414,14 @@ const checkStatusBtn = document.getElementById("checkStatusBtn");
 const depthStatusBtn = document.getElementById("depthStatusBtn");
 const summaryStatusBtn = document.getElementById("summaryStatusBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+
+const userBtn = document.getElementById("userBtn");
+
+const userEmail = localStorage.getItem("user_email");
+
+if (userBtn && userEmail) {
+  userBtn.textContent = userEmail;
+}
 const poemInput = document.getElementById("poemInput");
 const errorBox = document.getElementById("errorBox");
 const okBox = document.getElementById("okBox");
