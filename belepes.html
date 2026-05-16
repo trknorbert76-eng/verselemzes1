@@ -68,6 +68,16 @@ button{
   border:1px solid #444;
 }
 
+  .smallBtn{
+  width:auto;
+  padding:8px 14px;
+  font-size:0.9rem;
+  margin-top:4px;
+  background:#1f1f1f;
+  color:#d6b36a;
+  border:1px solid #444;
+}
+
 .error{
   margin-top:16px;
   color:#ff9b9b;
@@ -114,6 +124,10 @@ button{
       Belépés meglévő kóddal
     </button>
 
+    <button id="recoverBtn" class="smallBtn">
+  Elfelejtett kód
+</button>
+
     <div id="message"></div>
 
   </div>
@@ -129,6 +143,8 @@ const codeInput = document.getElementById("codeInput");
 
 const registerBtn = document.getElementById("registerBtn");
 const loginBtn = document.getElementById("loginBtn");
+  const recoverBtn =
+  document.getElementById("recoverBtn");
 
 const message = document.getElementById("message");
 
@@ -287,6 +303,64 @@ loginBtn.addEventListener("click", async () => {
   } finally {
 
     clearLoading(loginBtn);
+
+  }
+});
+
+  // ========================
+// ELFELEJTETT KÓD
+// ========================
+
+recoverBtn.addEventListener("click", async () => {
+
+  const email =
+    emailInput.value.trim().toLowerCase();
+
+  if (!email || !email.includes("@")) {
+    showError("Add meg az email címedet.");
+    return;
+  }
+
+  setLoading(recoverBtn, "Keresés...");
+
+  try {
+
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "recover",
+        email,
+        device_id: deviceId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      showError(data.error || "Nem sikerült lekérni a kódot.");
+      return;
+    }
+
+    showOk(
+`A belépőkódod:
+
+${data.access_code}
+
+Másold be ezt a belépőkód mezőbe.`
+    );
+
+  } catch (err) {
+
+    showError(
+      err.message || "Kapcsolódási hiba."
+    );
+
+  } finally {
+
+    clearLoading(recoverBtn);
 
   }
 });
