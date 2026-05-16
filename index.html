@@ -1583,10 +1583,7 @@ async function runStepWithUi(step, task) {
 analyzeBtn.addEventListener("click", async () => {
   const poem = poemInput.value.trim();
  
- const analysisId = crypto.randomUUID();
-sessionStorage.setItem("analysis_id", analysisId);
- 
- sessionStorage.setItem("analysis_running", "1");
+
 
   const fullStartedAt = performance.now();
 
@@ -1611,6 +1608,12 @@ const fullStats = {
 
   try {
     clearStepStorage();
+
+   const analysisId = crypto.randomUUID();
+sessionStorage.setItem("analysis_id", analysisId);
+
+sessionStorage.setItem("analysis_running", "1");
+
     sessionStorage.setItem("poem", poem);
     sessionStorage.setItem("poemText", poem);
 
