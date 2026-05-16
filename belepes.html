@@ -90,6 +90,32 @@ button{
   line-height:1.5;
   white-space:pre-wrap;
 }
+
+  .codeBox{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:12px 0 18px;
+}
+
+.codeMasked{
+  flex:1;
+  padding:12px;
+  border-radius:10px;
+  background:#111;
+  border:1px solid #444;
+  color:#b7efb7;
+  font-family:"Courier New", monospace;
+}
+
+.iconBtn{
+  width:auto;
+  padding:10px 12px;
+  margin:0;
+  background:#2b2b2b;
+  color:#eee;
+  border:1px solid #444;
+}
 </style>
 </head>
 
@@ -166,6 +192,40 @@ function showOk(text) {
   message.className = "ok";
   message.textContent = text;
 }
+let lastAccessCode = "";
+
+function showCodeResult(title, code, extraText = "") {
+  lastAccessCode = code;
+
+  message.className = "ok";
+  message.innerHTML = `
+${title}
+
+<div class="codeBox">
+  <div id="shownCode" class="codeMasked">••••••••••</div>
+  <button type="button" id="toggleCodeBtn" class="iconBtn">👁</button>
+  <button type="button" id="copyCodeBtn" class="iconBtn">📋</button>
+</div>
+
+${extraText}
+`;
+
+  let visible = false;
+
+  document.getElementById("toggleCodeBtn").onclick = () => {
+    visible = !visible;
+
+    document.getElementById("shownCode").textContent =
+      visible ? lastAccessCode : "••••••••••";
+  };
+
+  document.getElementById("copyCodeBtn").onclick = async () => {
+    await navigator.clipboard.writeText(lastAccessCode);
+    codeInput.value = lastAccessCode;
+    showOk("A kód kimásolva és bekerült a belépőkód mezőbe.");
+  };
+}
+  
 
 function setLoading(button, loadingText) {
   button.disabled = true;
@@ -215,16 +275,11 @@ registerBtn.addEventListener("click", async () => {
       return;
     }
 
-    showOk(
-`Sikeres regisztráció.
-
-Belépőkódod:
-
-${data.access_code}
-
-Ingyenes elemzések:
-${data.free_uses}`
-    );
+showCodeResult(
+  "Sikeres regisztráció.",
+  data.access_code,
+  `Ingyenes elemzések:<br>${data.free_uses}<br><br>Másold be a belépőkód mezőbe.`
+);
 
   } catch (err) {
 
@@ -344,13 +399,11 @@ recoverBtn.addEventListener("click", async () => {
       return;
     }
 
-    showOk(
-`A belépőkódod:
-
-${data.access_code}
-
-Másold be ezt a belépőkód mezőbe.`
-    );
+showCodeResult(
+  "A belépőkódod:",
+  data.access_code,
+  "Másold be ezt a belépőkód mezőbe."
+);
 
   } catch (err) {
 
