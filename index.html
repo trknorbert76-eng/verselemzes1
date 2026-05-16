@@ -322,6 +322,7 @@ font-family: "Courier New", monospace;
   <button id="depthStatusBtn" class="secondary">Hatás + mélység: nincs</button>
   <button id="summaryStatusBtn" class="secondary">Összegzés: nincs</button>
   <button id="logoutBtn" class="secondary">Kilépés</button>
+ <button id="newPoemBtn" class="secondary">Új vers</button>
 </div>
 
   <div class="statusBox errorBox" id="errorBox"></div>
@@ -430,6 +431,7 @@ const INNER_WORKER_URL = "https://belsomeres-public.trknorbert76.workers.dev";
 
   
 const analyzeBtn = document.getElementById("analyzeBtn");
+ const newPoemBtn = document.getElementById("newPoemBtn");
 const checkStatusBtn = document.getElementById("checkStatusBtn");
 const depthStatusBtn = document.getElementById("depthStatusBtn");
 const summaryStatusBtn = document.getElementById("summaryStatusBtn");
@@ -448,6 +450,7 @@ if (userTopBox && userEmail) {
     `${userEmail} | Ingyenes: ${freeUses} | Fizetős: ${paidUses}`;
 }
 const poemInput = document.getElementById("poemInput");
+ poemInput.value = sessionStorage.getItem("poemText") || "";
 const errorBox = document.getElementById("errorBox");
 const okBox = document.getElementById("okBox");
 const stepsWrap = document.getElementById("stepsWrap");
@@ -1498,6 +1501,32 @@ logoutBtn.addEventListener("click", () => {
   localStorage.removeItem("paid_access_ok");
   sessionStorage.clear();
   window.location.href = "belepes.html";
+});
+ newPoemBtn.addEventListener("click", () => {
+
+  if (sessionStorage.getItem("analysis_running") === "1") {
+    alert("Az elemzés még fut.");
+    return;
+  }
+
+  clearStepStorage();
+
+  sessionStorage.removeItem("poem");
+  sessionStorage.removeItem("poemText");
+  sessionStorage.removeItem("analysis_id");
+
+  poemInput.value = "";
+
+  updateCheckStatus();
+  updateDepthStatus();
+  updateSummaryStatus();
+
+  resetAllStepUi();
+
+  stepsWrap.style.display = "none";
+
+  clearMessages();
+  resetRunnerInfo();
 });
 
 function readJSON(key) {
