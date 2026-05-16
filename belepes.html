@@ -343,6 +343,10 @@ loginBtn.addEventListener("click", async () => {
     localStorage.setItem("paid_access_ok", "1");
     localStorage.setItem("user_email", email);
 
+    localStorage.setItem("free_uses", String(data.free_uses ?? 0));
+localStorage.setItem("paid_uses", String(data.paid_uses ?? 0));
+
+
     showOk("Belépés sikeres...");
 
     setTimeout(() => {
