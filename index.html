@@ -1110,7 +1110,15 @@ if (percent === 100) {
   box.classList.add("done", "real");
   btn.textContent = "Hatás + mélység kész";
   note.textContent = "Az eredmény elkészült, az oldal megnyitható.";
-  btn.onclick = () => window.location.href = "melyseg.html";
+  btn.onclick = () => {
+
+  if (!sessionStorage.getItem("step_summary_done")) {
+    alert("A teljes elemzés még nem készült el.");
+    return;
+  }
+
+  window.location.href = "melyseg.html";
+};
    }
 }
 
