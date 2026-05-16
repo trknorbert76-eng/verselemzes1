@@ -372,19 +372,7 @@ if (Number.isNaN(finalScore)) {
 
     sessionStorage.setItem("step_summary_done", Date.now().toString());
     const analysisId = sessionStorage.getItem("analysis_id");
-
-fetch("https://belepes-public.trknorbert76.workers.dev", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    action: "consume_analysis",
-    email: localStorage.getItem("user_email"),
-    analysis_id: analysisId
-  })
-}).catch(() => {});
-  }
+ }
 
   function renderReview(checkData) {
     if (!checkData) {
