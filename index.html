@@ -1582,6 +1582,14 @@ async function runStepWithUi(step, task) {
 
 analyzeBtn.addEventListener("click", async () => {
   const poem = poemInput.value.trim();
+
+const freeUses = Number(localStorage.getItem("free_uses") || 0);
+const paidUses = Number(localStorage.getItem("paid_uses") || 0);
+
+if (freeUses <= 0 && paidUses <= 0) {
+  showError("Nincs több elemzésed. Kérlek, vásárolj új elemzést és lépj be újra az email-cimeddel, és a hozzá tartozó kóddal");
+  return;
+}
  
 
 
