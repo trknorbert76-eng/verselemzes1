@@ -1813,6 +1813,30 @@ await waitForStep("step_summary_done");
 appendRunnerInfo("Összegzés kész.");
 updateSummaryStatus();
 
+   const consumeResponse = await fetch("https://belepes-public.trknorbert76.workers.dev", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    action: "consume_analysis",
+    email: localStorage.getItem("user_email"),
+    analysis_id: sessionStorage.getItem("analysis_id")
+  })
+});
+
+const consumeData = await consumeResponse.json();
+
+if (!consumeData.ok) {
+  throw new Error(consumeData.error || "Nem sikerült levonni az elemzést.");
+}
+
+localStorage.setItem("free_uses", String(consumeData.free_uses ?? 0));
+localStorage.setItem("paid_uses", String(consumeData.paid_uses ?? 0));
+
+userTopBox.textContent =
+  `${localStorage.getItem("user_email")} | Ingyenes: ${consumeData.free_uses ?? 0} | Fizetős: ${consumeData.paid_uses ?? 0}`;
+
     showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
    sessionStorage.removeItem("analysis_running");
     stopEstimateTimer();
