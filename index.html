@@ -440,7 +440,12 @@ const userTopBox = document.getElementById("userTopBox");
 const userEmail = localStorage.getItem("user_email");
 
 if (userTopBox && userEmail) {
-  userTopBox.textContent = userEmail;
+
+  const freeUses = localStorage.getItem("free_uses") || "0";
+  const paidUses = localStorage.getItem("paid_uses") || "0";
+
+  userTopBox.textContent =
+    `${userEmail} | Ingyenes: ${freeUses} | Fizetős: ${paidUses}`;
 }
 const poemInput = document.getElementById("poemInput");
 const errorBox = document.getElementById("errorBox");
