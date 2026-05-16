@@ -59,16 +59,26 @@ button{
   font-weight:bold;
   font-size:1rem;
   cursor:pointer;
+  margin-bottom:12px;
+}
+
+.secondary{
+  background:#2b2b2b;
+  color:#eee;
+  border:1px solid #444;
 }
 
 .error{
   margin-top:16px;
   color:#ff9b9b;
+  line-height:1.5;
 }
 
 .ok{
   margin-top:16px;
   color:#b7efb7;
+  line-height:1.5;
+  white-space:pre-wrap;
 }
 </style>
 </head>
@@ -78,25 +88,30 @@ button{
 <div class="wrap">
   <div class="card">
 
-    <h1>Belépés</h1>
+    <h1>Versminőség-elemző</h1>
 
     <div class="intro">
-      Add meg a hozzáférési kódodat.
+      Regisztrálj email címmel vagy lépj be a meglévő hozzáférési kódoddal.
     </div>
 
-   <input
-  type="email"
-  id="emailInput"
-  placeholder="Email címed"
-/>
-     <input
-      type="text"
-      id="codeInput"
-      placeholder="Belépőkód"
+    <input
+      type="email"
+      id="emailInput"
+      placeholder="Email címed"
     />
 
-    <button id="loginBtn">
-      Belépés
+    <input
+      type="text"
+      id="codeInput"
+      placeholder="Belépőkód (ha már van)"
+    />
+
+    <button id="registerBtn">
+      Új regisztráció
+    </button>
+
+    <button id="loginBtn" class="secondary">
+      Belépés meglévő kóddal
     </button>
 
     <div id="message"></div>
@@ -105,49 +120,177 @@ button{
 </div>
 
 <script>
-const VALID_CODES = [
-  "NORBI-2026",
-  "TESZT-001",
-  "TESZT-002",
-  "TESZT-003"
-];
 
+const WORKER_URL =
+  "https://belepes-public.trknorbert76.workers.dev";
+
+const emailInput = document.getElementById("emailInput");
 const codeInput = document.getElementById("codeInput");
-  const emailInput = document.getElementById("emailInput");
+
+const registerBtn = document.getElementById("registerBtn");
 const loginBtn = document.getElementById("loginBtn");
+
 const message = document.getElementById("message");
 
-loginBtn.addEventListener("click", () => {
+// DEVICE ID
 
-  const email = emailInput.value.trim();
-const code = codeInput.value.trim();
+let deviceId = localStorage.getItem("device_id");
 
-if (!email || !email.includes("@")) {
-  message.className = "error";
-  message.textContent = "Adj meg egy érvényes email címet.";
-  return;
+if (!deviceId) {
+  deviceId = crypto.randomUUID();
+  localStorage.setItem("device_id", deviceId);
 }
 
-  if (VALID_CODES.includes(code)) {
+function showError(text) {
+  message.className = "error";
+  message.textContent = text;
+}
+
+function showOk(text) {
+  message.className = "ok";
+  message.textContent = text;
+}
+
+function setLoading(button, loadingText) {
+  button.disabled = true;
+  button.dataset.original = button.textContent;
+  button.textContent = loadingText;
+}
+
+function clearLoading(button) {
+  button.disabled = false;
+  button.textContent = button.dataset.original;
+}
+
+// ========================
+// REGISZTRÁCIÓ
+// ========================
+
+registerBtn.addEventListener("click", async () => {
+
+  const email =
+    emailInput.value.trim().toLowerCase();
+
+  if (!email || !email.includes("@")) {
+    showError("Adj meg egy érvényes email címet.");
+    return;
+  }
+
+  setLoading(registerBtn, "Regisztráció...");
+
+  try {
+
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "register",
+        email,
+        device_id: deviceId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      showError(data.error || "Sikertelen regisztráció.");
+      return;
+    }
+
+    showOk(
+`Sikeres regisztráció.
+
+Belépőkódod:
+
+${data.access_code}
+
+Ingyenes elemzések:
+${data.free_uses}`
+    );
+
+  } catch (err) {
+
+    showError(
+      err.message || "Kapcsolódási hiba."
+    );
+
+  } finally {
+
+    clearLoading(registerBtn);
+
+  }
+});
+
+// ========================
+// BELÉPÉS
+// ========================
+
+loginBtn.addEventListener("click", async () => {
+
+  const email =
+    emailInput.value.trim().toLowerCase();
+
+  const code =
+    codeInput.value.trim();
+
+  if (!email || !email.includes("@")) {
+    showError("Adj meg egy érvényes email címet.");
+    return;
+  }
+
+  if (!code) {
+    showError("Add meg a belépőkódot.");
+    return;
+  }
+
+  setLoading(loginBtn, "Belépés...");
+
+  try {
+
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "login",
+        email,
+        code,
+        device_id: deviceId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      showError(data.error || "Sikertelen belépés.");
+      return;
+    }
 
     localStorage.setItem("paid_access_ok", "1");
     localStorage.setItem("user_email", email);
 
-    message.className = "ok";
-    message.textContent = "Belépés sikeres...";
+    showOk("Belépés sikeres...");
 
     setTimeout(() => {
       window.location.href = "index.html";
     }, 700);
 
-  } else {
+  } catch (err) {
 
-    message.className = "error";
-    message.textContent = "Hibás belépőkód.";
+    showError(
+      err.message || "Kapcsolódási hiba."
+    );
+
+  } finally {
+
+    clearLoading(loginBtn);
 
   }
-
 });
+
 </script>
 
 </body>
