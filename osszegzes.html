@@ -319,6 +319,8 @@
  if (!poem || !kind || !structure || !rhythm || !images || !expression || !depth) {
   showError("Hiányoznak az elemzés adatai.");
   sessionStorage.setItem("step_summary_done", Date.now().toString());
+
+ 
 } else {
   renderSummary();
 }
@@ -343,6 +345,9 @@
 if (Number.isNaN(finalScore)) {
   showError("Nincs végső pontszám az ellenőrzésből.");
   sessionStorage.setItem("step_summary_done", Date.now().toString());
+
+
+
   return;
 }
 
@@ -366,6 +371,19 @@ if (Number.isNaN(finalScore)) {
     renderReview(check);
 
     sessionStorage.setItem("step_summary_done", Date.now().toString());
+    const analysisId = sessionStorage.getItem("analysis_id");
+
+fetch("https://belepes-public.trknorbert76.workers.dev", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    action: "consume_analysis",
+    email: localStorage.getItem("user_email"),
+    analysis_id: analysisId
+  })
+}).catch(() => {});
   }
 
   function renderReview(checkData) {
