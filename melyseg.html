@@ -327,10 +327,11 @@ button.secondary {
     és mennyire nyílik meg az első olvasáson túl.
   </p>
 
-  <div class="topbar">
-    <button class="secondary" id="backBtn">Új vers</button>
-    <button class="secondary" id="checkBtn">Tovább az ellenőrhöz</button>
-  </div>
+<div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza a kifejezésmódhoz</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button id="checkBtn">Tovább az ellenőrhöz →</button>
+</div>
 
   <div class="notice ok" id="okBox"></div>
   <div class="notice error" id="errorBox"></div>
@@ -711,8 +712,11 @@ const maxScore = depth.checker_max_score;
 }
 
 document.getElementById("backBtn").addEventListener("click", () => {
-  clearAllAnalysis();
-  window.location.href = "index.html";
+  window.location.href = "kifejezesmod.html";
+});
+
+  document.getElementById("summaryBtn").addEventListener("click", () => {
+  window.location.href = "osszegzes.html";
 });
 
 document.getElementById("checkBtn").addEventListener("click", () => {
