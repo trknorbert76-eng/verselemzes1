@@ -183,12 +183,11 @@ button.next {
     Ez az oldal azt próbálja megérteni, miről szól a vers: mi történik benne, ki vagy mi áll a középpontban, és mi lehet a mélyebb jelentése.
   </p>
 
-  <div class="topbar">
-    <button class="secondary" id="backBtn">← Vissza a felismeréshez</button>
-    <button id="reloadBtn">Újraértelmezés</button>
-    <button class="next" id="nextBtn">Tovább a szerkezethez →</button>
-    <button class="next" id="summaryBtn">Tovább az összegzéshez →</button>
-  </div>
+<div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza a felismeréshez</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button class="next" id="nextBtn">Tovább a belső méréshez →</button>
+</div>
 
   <div class="loadingBox" id="loadingBox">Az értelmezés folyamatban...</div>
   <div class="errorBox" id="errorBox"></div>
@@ -281,7 +280,7 @@ button.next {
 
 <script>
 const WORKER_URL = "https://ertelmezes-public.trknorbert76.workers.dev";
-const NEXT_PAGE = "szerkezet.html";
+const NEXT_PAGE = "belsomeres.html";
 const autorun = new URLSearchParams(window.location.search).get("autorun") === "1";
 
 const loadingBox = document.getElementById("loadingBox");
@@ -492,11 +491,6 @@ backBtn.addEventListener("click", () => {
   window.location.href = "felismeres.html";
 });
 
-reloadBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("analysis_interpretation");
-  sessionStorage.removeItem("step_interpretation_done");
-  runInterpretation(true);
-});
 
 nextBtn.addEventListener("click", () => {
   window.location.href = NEXT_PAGE;
