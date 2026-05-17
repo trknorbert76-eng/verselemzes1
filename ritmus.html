@@ -229,10 +229,11 @@ button.next {
     Ez a harmadik belső oldal. Itt már nem a vers témáját vagy szerkezetét nézzük, hanem azt, hogyan áramlik a szöveg, mennyire egyenletes vagy tördeltebb a megszólalása, és hol gördül vagy akad meg a vers ritmusa.
   </p>
 
-  <div class="topbar">
-    <button class="secondary" id="backBtn">← Vissza a szerkezethez</button>
-    <button id="reloadBtn">Újraelemzés</button>
-  </div>
+<div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza a szerkezethez</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button class="next" id="topNextBtn">Tovább a képekhez →</button>
+</div>
 
   <div class="loadingBox" id="loadingBox">A ritmikai elemzés folyamatban...</div>
   <div class="errorBox" id="errorBox"></div>
@@ -303,10 +304,6 @@ button.next {
     <h2>A vizsgált vers</h2>
     <div class="poemText" id="poemText"></div>
   </div>
-
-  <div class="footerRow" id="footerRow">
-    <button class="next" id="nextBtn">Tovább a képekhez →</button>
-  </div>
 </div>
 <script>
 const params = new URLSearchParams(window.location.search);
@@ -320,7 +317,6 @@ const infoBox = document.getElementById("infoBox");
 const resultLayout = document.getElementById("resultLayout");
 const poemPreview = document.getElementById("poemPreview");
 const poemText = document.getElementById("poemText");
-const footerRow = document.getElementById("footerRow");
 const previousBox = document.getElementById("previousBox");
 
 const rhythmTypeEl = document.getElementById("rhythmType");
@@ -337,8 +333,8 @@ const prevStructureTypeEl = document.getElementById("prevStructureType");
 const prevCohesionEl = document.getElementById("prevCohesion");
 
 const backBtn = document.getElementById("backBtn");
-const reloadBtn = document.getElementById("reloadBtn");
-const nextBtn = document.getElementById("nextBtn");
+const summaryBtn = document.getElementById("summaryBtn");
+const topNextBtn = document.getElementById("topNextBtn");
 
 function showLoading(message) {
   loadingBox.textContent = message;
@@ -403,7 +399,7 @@ function renderResult(result) {
   reasoningEl.textContent = result.reasoning || "Nincs indoklás.";
 
   resultLayout.style.display = "grid";
-  footerRow.style.display = "flex";
+  
 }
 
 async function runRhythmAnalysis(forceRefresh = false) {
@@ -483,13 +479,11 @@ backBtn.addEventListener("click", () => {
   window.location.href = "szerkezet.html";
 });
 
-reloadBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("analysis_rhythm");
-  sessionStorage.removeItem("step_rhythm_done");
-  runRhythmAnalysis(true);
+summaryBtn.addEventListener("click", () => {
+  window.location.href = "osszegzes.html";
 });
 
-nextBtn.addEventListener("click", () => {
+topNextBtn.addEventListener("click", () => {
   window.location.href = NEXT_PAGE;
 });
 
