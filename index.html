@@ -907,6 +907,7 @@ function resetStepUi(step) {
 
 btn.disabled = true;
 btn.textContent = step.waitingText;
+ btn.classList.remove("loading", "done");
 
 box.classList.remove("loading", "done", "started", "half", "real", "slow");
 
