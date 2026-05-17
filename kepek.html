@@ -240,10 +240,11 @@ button.next {
     Ez a negyedik belső oldal. Itt azt nézzük, hogy a vers mennyire dolgozik valódi képekkel, ezek mennyire konkrétak vagy elvontak, összetartanak-e, és díszítik-e csak a szöveget, vagy tényleges jelentést is hordoznak.
   </p>
 
-  <div class="topbar">
-    <button class="secondary" id="backBtn">← Vissza a ritmushoz</button>
-    <button id="reloadBtn">Újraelemzés</button>
-  </div>
+<div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza a ritmushoz</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button class="next" id="topNextBtn">Tovább a kifejezéshez →</button>
+</div>
 
   <div class="loadingBox" id="loadingBox">A képi elemzés folyamatban...</div>
   <div class="errorBox" id="errorBox"></div>
@@ -332,10 +333,6 @@ button.next {
     <h2>A vizsgált vers</h2>
     <div class="poemText" id="poemText"></div>
   </div>
-
-  <div class="footerRow" id="footerRow">
-    <button class="next" id="nextBtn">Tovább a kifejezésmódhoz →</button>
-  </div>
 </div>
 
 <script>
@@ -350,7 +347,6 @@ const infoBox = document.getElementById("infoBox");
 const resultLayout = document.getElementById("resultLayout");
 const poemPreview = document.getElementById("poemPreview");
 const poemText = document.getElementById("poemText");
-const footerRow = document.getElementById("footerRow");
 const previousBox = document.getElementById("previousBox");
 
 const imageryPresenceEl = document.getElementById("imageryPresence");
@@ -375,8 +371,8 @@ const prevRhythmTypeEl = document.getElementById("prevRhythmType");
 const prevFlowEl = document.getElementById("prevFlow");
 
 const backBtn = document.getElementById("backBtn");
-const reloadBtn = document.getElementById("reloadBtn");
-const nextBtn = document.getElementById("nextBtn");
+const summaryBtn = document.getElementById("summaryBtn");
+const topNextBtn = document.getElementById("topNextBtn");
 
 function showLoading(message) {
   loadingBox.textContent = message;
@@ -458,7 +454,7 @@ function renderResult(result) {
   reasoningEl.textContent = result.reasoning || "Nincs indoklás.";
 
   resultLayout.style.display = "grid";
-  footerRow.style.display = "flex";
+  
 }
 
 async function runImagesAnalysis(forceRefresh = false) {
@@ -515,7 +511,7 @@ if (!forceRefresh) {
 }
   showLoading("A képi elemzés folyamatban...");
   resultLayout.style.display = "none";
-  footerRow.style.display = "none";
+  
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -561,13 +557,11 @@ backBtn.addEventListener("click", () => {
   window.location.href = "ritmus.html";
 });
 
-reloadBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("analysis_images");
-  sessionStorage.removeItem("step_imagery_done");
-  runImagesAnalysis(true);
+summaryBtn.addEventListener("click", () => {
+  window.location.href = "osszegzes.html";
 });
 
-nextBtn.addEventListener("click", () => {
+topNextBtn.addEventListener("click", () => {
   window.location.href = NEXT_PAGE;
 });
 
