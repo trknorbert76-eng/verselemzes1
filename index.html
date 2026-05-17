@@ -94,6 +94,18 @@ button.secondary {
   border: 1px solid #444;
 }
 
+ button.orangeStrong {
+  background: #c96b00;
+  color: #fff;
+  border: 1px solid #ff9800;
+}
+
+button.goldAction {
+  background: #d6b36a;
+  color: #111;
+  border: 1px solid #d6b36a;
+}
+
 button.seed {
   background: #d6b36a;
   color: #111;
@@ -1618,6 +1630,12 @@ const fullStats = {
     return;
   }
 
+ logoutBtn.classList.remove("orangeStrong");
+logoutBtn.classList.add("secondary");
+
+newPoemBtn.classList.remove("goldAction");
+newPoemBtn.classList.add("secondary");
+
   setLoading(true);
   startEstimateTimer(poem);
   finalCountdownStarted = false;
@@ -1857,6 +1875,13 @@ userTopBox.textContent =
   `${localStorage.getItem("user_email")} | Ingyenes: ${consumeData.free_uses ?? 0} | Fizetős: ${consumeData.paid_uses ?? 0}`;
 
     showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
+
+   logoutBtn.classList.remove("secondary");
+logoutBtn.classList.add("orangeStrong");
+
+newPoemBtn.classList.remove("secondary");
+newPoemBtn.classList.add("goldAction");
+  
    sessionStorage.removeItem("analysis_running");
     stopEstimateTimer();
 estimateTimer.textContent = "00:00,00";
