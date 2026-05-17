@@ -254,10 +254,11 @@ button.next {
     Ez a második belső oldal. Itt már nem azt nézzük, milyen típusú a vers, hanem azt, hogyan épül fel, van-e belső mozgása, töréspontja, és mennyire tartja össze magát.
   </p>
 
-  <div class="topbar">
-    <button class="secondary" id="backBtn">← Vissza a felismeréshez</button>
-    <button id="reloadBtn">Újraelemzés</button>
-  </div>
+ <div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza a belső méréshez</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button class="next" id="topNextBtn">Tovább a ritmushoz →</button>
+</div>
 
   <div class="loadingBox" id="loadingBox">A szerkezeti elemzés folyamatban...</div>
   <div class="errorBox" id="errorBox"></div>
@@ -339,10 +340,6 @@ button.next {
     <h2>A vizsgált vers</h2>
     <div class="poemText" id="poemText"></div>
   </div>
-
-  <div class="footerRow" id="footerRow">
-    <button class="next" id="nextBtn">Tovább a ritmushoz →</button>
-  </div>
 </div>
 
 <script>
@@ -358,7 +355,6 @@ const infoBox = document.getElementById("infoBox");
 const resultLayout = document.getElementById("resultLayout");
 const poemPreview = document.getElementById("poemPreview");
 const poemText = document.getElementById("poemText");
-const footerRow = document.getElementById("footerRow");
 const previousBox = document.getElementById("previousBox");
 
 const structureTypeEl = document.getElementById("structureType");
@@ -379,8 +375,8 @@ const prevSpeechModeEl = document.getElementById("prevSpeechMode");
 const prevTraitsEl = document.getElementById("prevTraits");
 
 const backBtn = document.getElementById("backBtn");
-const reloadBtn = document.getElementById("reloadBtn");
-const nextBtn = document.getElementById("nextBtn");
+const summaryBtn = document.getElementById("summaryBtn");
+const topNextBtn = document.getElementById("topNextBtn");
 
 function showLoading(message) {
   loadingBox.textContent = message;
@@ -461,7 +457,7 @@ cohesionScoreNoteEl.textContent = `Pontérték az ellenőrben: ${cohesionPoint}`
   reasoningEl.textContent = result.reasoning || "Nincs indoklás.";
 
   resultLayout.style.display = "grid";
-  footerRow.style.display = "flex";
+  
 }
 
 async function runStructureAnalysis(forceRefresh = false) {
@@ -500,7 +496,7 @@ if (!forceRefresh) {
 }
   showLoading("A szerkezeti elemzés folyamatban...");
   resultLayout.style.display = "none";
-  footerRow.style.display = "none";
+  
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -535,15 +531,14 @@ showInfo("A szerkezeti elemzés elkészült.");
 }
 
 backBtn.addEventListener("click", () => {
-  window.location.href = "felismeres.html";
+window.location.href = "belsomeres.html";
 });
 
-reloadBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("analysis_structure");
-  runStructureAnalysis(true);
+summaryBtn.addEventListener("click", () => {
+  window.location.href = "osszegzes.html";
 });
 
-nextBtn.addEventListener("click", () => {
+topNextBtn.addEventListener("click", () => {
   window.location.href = NEXT_PAGE;
 });
 
