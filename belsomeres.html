@@ -258,10 +258,7 @@ button.next {
     <div class="poemText" id="poemText"></div>
   </div>
 
-  <div class="footerRow" id="footerRow">
-    <button class="next" id="nextBtn">Tovább a mélységhez →</button>
-  </div>
-</div>
+
 
 <script>
 const params = new URLSearchParams(window.location.search);
@@ -277,14 +274,14 @@ const resultGrid = document.getElementById("resultGrid");
 const summaryBox = document.getElementById("summaryBox");
 const poemPreview = document.getElementById("poemPreview");
 const poemText = document.getElementById("poemText");
-const footerRow = document.getElementById("footerRow");
+
 
 const summaryBtn = document.getElementById("summaryBtn");
 const topNextBtn = document.getElementById("topNextBtn");
 const homeBtn = document.getElementById("homeBtn");
-const nextBtn = document.getElementById("nextBtn");
+const topNextBtn = document.getElementById("topNextBtn");
 
-function showLoading(message) {
+  function showLoading(message) {
   loadingBox.textContent = message;
   loadingBox.style.display = "block";
 }
@@ -378,7 +375,7 @@ function renderResult(result) {
 
   resultGrid.style.display = "grid";
   summaryBox.style.display = "block";
-  footerRow.style.display = "flex";
+  
 }
 
 async function runInnerMeasure(forceRefresh = false) {
@@ -464,7 +461,7 @@ homeBtn.addEventListener("click", () => {
   window.location.href = "index.html";
 });
 
-nextBtn.addEventListener("click", () => {
+topNextBtn.addEventListener("click", () => {
   window.location.href = NEXT_PAGE;
 });
 
