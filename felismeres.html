@@ -196,10 +196,10 @@ button.next {
    Ez az első belső oldal. Itt még nincs végső kritika. Csak a vers alaptípusát, hangulatát, megszólalásának jellegét és stíluskarakterét határozzuk meg.
   </p>
 
-  <div class="topbar">
-  <button class="secondary" id="backBtn">← Vissza</button>
-  <button id="reloadBtn">Újraelemzés</button>
-  <button class="next" id="nextBtn">Tovább a szerkezethez →</button>
+<div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza a főoldalra</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button class="next" id="nextBtn">Tovább az értelmezéshez →</button>
 </div>
 
   <div class="loadingBox" id="loadingBox">A vers típusának felismerése folyamatban...</div>
@@ -261,7 +261,7 @@ button.next {
 
 <script>
 const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
-const NEXT_PAGE = "szerkezet.html";
+const NEXT_PAGE = "ertelmezes.html";
 const autorun = new URLSearchParams(window.location.search).get("autorun") === "1";
 
 const loadingBox = document.getElementById("loadingBox");
