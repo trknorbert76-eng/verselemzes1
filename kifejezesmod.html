@@ -240,10 +240,11 @@
       megmutat vagy magyaráz, mennyire sűrített, pontos, egyedi és természetes a megszólalása.
     </p>
 
-    <div class="topbar">
-      <button class="secondary" id="backBtn">← Vissza a képekhez</button>
-      <button id="reloadBtn">Újraelemzés</button>
-    </div>
+   <div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza a képekhez</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button class="next" id="topNextBtn">Tovább a hatás+mélységhez →</button>
+</div>
 
     <div class="loadingBox" id="loadingBox">A kifejezésmód elemzése folyamatban...</div>
     <div class="errorBox" id="errorBox"></div>
@@ -353,10 +354,6 @@
       <h2>A vizsgált vers</h2>
       <div class="poemText" id="poemText"></div>
     </div>
-
-    <div class="footerRow" id="footerRow">
-     <button class="next" id="nextBtn">Tovább az ellenőrzéshez →</button>
-    </div>
   </div>
 
   <script>
@@ -382,7 +379,7 @@
     }
 
     const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
-    const NEXT_PAGE = "ellenor.html";
+    const NEXT_PAGE = "hatasmelyseg.html";
 
     const params = new URLSearchParams(window.location.search);
     const autorun = params.get("autorun") === "1";
@@ -393,7 +390,6 @@
     const resultLayout = document.getElementById("resultLayout");
     const poemPreview = document.getElementById("poemPreview");
     const poemText = document.getElementById("poemText");
-    const footerRow = document.getElementById("footerRow");
     const previousBox = document.getElementById("previousBox");
 
     const expressionModeEl = document.getElementById("expressionMode");
@@ -421,8 +417,8 @@
     const prevOriginalityEl = document.getElementById("prevOriginality");
 
     const backBtn = document.getElementById("backBtn");
-    const reloadBtn = document.getElementById("reloadBtn");
-    const nextBtn = document.getElementById("nextBtn");
+    const summaryBtn = document.getElementById("summaryBtn");
+    const topNextBtn = document.getElementById("topNextBtn");
 
     function showLoading(message) {
       loadingBox.textContent = message;
@@ -495,7 +491,7 @@
       reasoningEl.textContent = result?.reasoning || "Nincs indoklás.";
 
       resultLayout.style.display = "grid";
-      footerRow.style.display = "flex";
+      
     }
 
     async function runExpressionAnalysis(forceRefresh = false) {
@@ -565,11 +561,11 @@
 
       showLoading("A kifejezésmód elemzése folyamatban...");
       resultLayout.style.display = "none";
-      footerRow.style.display = "none";
+      
 
-      reloadBtn.disabled = true;
-      backBtn.disabled = true;
-      nextBtn.disabled = true;
+   summaryBtn.disabled = true;
+backBtn.disabled = true;
+topNextBtn.disabled = true;
 
       try {
         const res = await fetch(WORKER_URL, {
@@ -617,9 +613,9 @@
         showError(err.message || "Ismeretlen hiba történt.");
       } finally {
         hideLoading();
-        reloadBtn.disabled = false;
-        backBtn.disabled = false;
-        nextBtn.disabled = false;
+      summaryBtn.disabled = false;
+backBtn.disabled = false;
+topNextBtn.disabled = false;
       }
     }
 
@@ -627,18 +623,13 @@
       window.location.href = "kepek.html";
     });
 
-    reloadBtn.addEventListener("click", () => {
-      sessionStorage.removeItem("analysis_expression");
-      sessionStorage.removeItem("analysis_check");
-      sessionStorage.removeItem("step_expression_done");
-      sessionStorage.removeItem("step_check_done");
-      sessionStorage.removeItem("step_summary_done");
-      runExpressionAnalysis(true);
-    });
+ summaryBtn.addEventListener("click", () => {
+  window.location.href = "osszegzes.html";
+});
 
-    nextBtn.addEventListener("click", () => {
-      window.location.href = NEXT_PAGE;
-    });
+topNextBtn.addEventListener("click", () => {
+  window.location.href = NEXT_PAGE;
+});
 
     runExpressionAnalysis(false);
   </script>
