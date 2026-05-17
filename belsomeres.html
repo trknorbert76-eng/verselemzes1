@@ -184,10 +184,12 @@ button.next {
     Ez az oldal a vers finomabb belső költészeti mércéit mutatja: jelenlét, átalakulás, memorabilitás, kockázat, nyelvi zeneiség, sűrűség, csend és tét.
   </p>
 
-  <div class="topbar">
-    <button class="secondary" id="backBtn">← Vissza az értelmezéshez</button>
-    <button id="reloadBtn">Újramérés</button>
-  </div>
+<div class="topbar">
+  <button class="secondary" id="backBtn">← Vissza az értelmezéshez</button>
+  <button id="summaryBtn">Összegzés</button>
+  <button class="next" id="nextBtn">Tovább a szerkezethez →</button>
+  <button class="secondary" id="homeBtn">← Vissza a főoldalra</button>
+</div>
 
   <div class="loadingBox" id="loadingBox">A belső mérés folyamatban...</div>
   <div class="errorBox" id="errorBox"></div>
@@ -277,8 +279,9 @@ const poemPreview = document.getElementById("poemPreview");
 const poemText = document.getElementById("poemText");
 const footerRow = document.getElementById("footerRow");
 
-const backBtn = document.getElementById("backBtn");
-const reloadBtn = document.getElementById("reloadBtn");
+const summaryBtn = document.getElementById("summaryBtn");
+const nextBtn = document.getElementById("nextBtn");
+const homeBtn = document.getElementById("homeBtn");
 const nextBtn = document.getElementById("nextBtn");
 
 function showLoading(message) {
@@ -453,11 +456,12 @@ backBtn.addEventListener("click", () => {
   window.location.href = "ertelmezes.html";
 });
 
-reloadBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("analysis_inner_measure");
-  sessionStorage.removeItem("step_inner_measure_done");
-  sessionStorage.removeItem("step_inner_measure_loading");
-  runInnerMeasure(true);
+summaryBtn.addEventListener("click", () => {
+  window.location.href = "osszegzes.html";
+});
+
+homeBtn.addEventListener("click", () => {
+  window.location.href = "index.html";
 });
 
 nextBtn.addEventListener("click", () => {
