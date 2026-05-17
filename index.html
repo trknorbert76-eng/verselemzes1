@@ -321,17 +321,16 @@ font-family: "Courier New", monospace;
   <h1>Verselemző</h1>
   <div id="userTopBox"></div>
 </div>
-  <p class="intro">
-Többrétegű költői elemzés.<br>
-A költészetet nem lehet pontosan mérni, hiszen az ízlés,
-az érzelmi hatás és az olvasat minden emberben másként működik.
-Egy vers technikai kidolgozottsága, ritmusa, képi világa,
-belső mélysége és összhatása azonban mégis különbségeket teremt.<br>
-Ez a rendszer arra tesz kísérletet, hogy több szempontból
-megvizsgálja a vers belső működését, és az elemzés alapján
-elhelyezze azt egy költői nívón.
+ <p class="intro" id="introText">
+  Többrétegű költői elemzés.<br>
+  A költészetet nem lehet pontosan mérni, hiszen az ízlés,
+  az érzelmi hatás és az olvasat minden emberben másként működik.
+  Egy vers technikai kidolgozottsága, ritmusa, képi világa,
+  belső mélysége és összhatása azonban mégis különbségeket teremt.<br>
+  Ez a rendszer arra tesz kísérletet, hogy több szempontból
+  megvizsgálja a vers belső működését, és az elemzés alapján
+  elhelyezze azt egy költői nívón.
 </p>
-
   <textarea id="poemInput" placeholder="Illeszd be ide a versed..."></textarea>
 
 <div class="btnRow">
@@ -454,6 +453,8 @@ const checkStatusBtn = document.getElementById("checkStatusBtn");
 const depthStatusBtn = document.getElementById("depthStatusBtn");
 const summaryStatusBtn = document.getElementById("summaryStatusBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+
+ const introText = document.getElementById("introText");
 
 const userTopBox = document.getElementById("userTopBox");
 
@@ -1645,6 +1646,7 @@ newPoemBtn.classList.add("secondary");
 
   setLoading(true);
   startEstimateTimer(poem);
+ introText.textContent = "Elemzés folyamatban...";
   finalCountdownStarted = false;
 
   try {
@@ -1882,6 +1884,7 @@ userTopBox.textContent =
   `${localStorage.getItem("user_email")} | Ingyenes: ${consumeData.free_uses ?? 0} | Fizetős: ${consumeData.paid_uses ?? 0}`;
 
     showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
+   introText.textContent = "Elemzés elkészült.";
 
    logoutBtn.classList.remove("secondary");
 logoutBtn.classList.add("orangeStrong");
