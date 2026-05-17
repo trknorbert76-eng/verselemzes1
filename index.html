@@ -1893,6 +1893,26 @@ if (!poemInput.value.trim()) {
 updateCheckStatus();
 updateDepthStatus();
 updateSummaryStatus();
+ function restoreFinishedUi() {
+  if (!sessionStorage.getItem("step_summary_done")) return;
+
+  stepsWrap.style.display = "block";
+
+  pipeline.forEach(step => {
+    if (sessionStorage.getItem(step.doneKey)) {
+      setStepDone(step);
+    }
+  });
+
+  updateCheckStatus();
+  updateDepthStatus();
+  updateDepthProgress();
+  updateSummaryStatus();
+
+  showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
+}
+
+restoreFinishedUi();
 setInterval(() => {
   updateDepthStatus();
   updateDepthProgress();
@@ -1901,7 +1921,7 @@ setInterval(() => {
 setInterval(() => {
   const hasFinalCheck = sessionStorage.getItem("analysis_check");
 
-  if (!hasFinalCheck) {
+ if (!hasFinalCheck && !sessionStorage.getItem("step_summary_done")) {
     sessionStorage.removeItem("step_check_done");
     sessionStorage.removeItem("step_summary_done");
   }
