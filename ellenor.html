@@ -360,7 +360,7 @@ const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
 const NEXT_PAGE = "osszegzes.html"; 
 
 const noticeEl = document.getElementById("notice");
-const reanalyzeBtn = document.getElementById("reanalyzeBtn");
+
 
 function safeParse(text) {
   try {
@@ -615,7 +615,7 @@ if (!forceRefresh) {
 }
 
 
-reanalyzeBtn.disabled = true;
+
   try {
     // ==================================
     // 1. SEED - TISZTA ELSŐ OLVASAT
@@ -713,16 +713,11 @@ if (autorun && !forceRefresh) {
   } catch (err) {
     showNotice("Hiba történt az ellenőrzés során: " + (err.message || "ismeretlen hiba"));
   } finally {
-    reanalyzeBtn.disabled = false;
+    
   }
 }
 
-reanalyzeBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("analysis_check_seed");
-  sessionStorage.removeItem("analysis_check");
-  sessionStorage.removeItem("step_check_done");
-  runCheckAnalysis(true);
-});
+
 setInterval(() => {
   const seed = unwrapPack(readJSON("analysis_check_seed"));
   const check = unwrapPack(readJSON("analysis_check"));
