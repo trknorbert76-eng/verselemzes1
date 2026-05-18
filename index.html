@@ -1550,9 +1550,10 @@ logoutBtn.addEventListener("click", () => {
     return;
   }
 
-  localStorage.removeItem("paid_access_ok");
-  sessionStorage.clear();
-  window.location.href = "belepes.html";
+ localStorage.clear();
+sessionStorage.clear();
+
+window.location.href = "belepes.html";
 });
  newPoemBtn.addEventListener("click", () => {
 
