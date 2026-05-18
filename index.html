@@ -1988,8 +1988,13 @@ if (!consumeData.ok) {
   throw new Error(consumeData.error || "Nem sikerült levonni az elemzést.");
 }
 
-localStorage.setItem("free_uses", String(consumeData.free_uses ?? 0));
-localStorage.setItem("paid_uses", String(consumeData.paid_uses ?? 0));
+if (consumeData.free_uses !== undefined) {
+  localStorage.setItem("free_uses", String(consumeData.free_uses));
+}
+
+if (consumeData.paid_uses !== undefined) {
+  localStorage.setItem("paid_uses", String(consumeData.paid_uses));
+}
 
 userTopBox.textContent =
   `${localStorage.getItem("user_email")} | Ingyenes: ${consumeData.free_uses ?? 0} | Fizetős: ${consumeData.paid_uses ?? 0}`;
