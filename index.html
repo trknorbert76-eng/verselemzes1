@@ -373,7 +373,7 @@ font-family: "Courier New", monospace;
   Elemzés csomagok
 </button>
 
-<div id="packageMenu" style="display:none; margin-top:8px;">
+<div id="packageMenu">
   <button class="packageBtn" data-package="5">5 € – 5 elemzés</button>
   <button class="packageBtn" data-package="10">10 € – 10 elemzés</button>
   <button class="packageBtn" data-package="25">25 € – 30 elemzés</button>
@@ -1654,7 +1654,7 @@ document.querySelectorAll(".packageBtn").forEach(btn => {
 
     selectedPackage = btn.dataset.package;
 
-    document.getElementById("packageMenu").style.display = "none";
+    document.getElementById("packageMenu").classList.remove("open");
 
     const paypalBox = document.getElementById("paypalButtons");
 
