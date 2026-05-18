@@ -310,6 +310,17 @@ font-family: "Courier New", monospace;
     grid-template-columns: 1fr;
   }
 }
+ #buyWrap {
+  text-align: right;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+.smallBuyBtn {
+  padding: 7px 12px;
+  font-size: 0.85rem;
+}
+
 </style>
 </head>
 
@@ -321,6 +332,14 @@ font-family: "Courier New", monospace;
   <h1>Verselemző</h1>
   <div id="userTopBox"></div>
 </div>
+
+ <div id="buyWrap">
+  <button id="buyBtn" class="goldAction smallBuyBtn">
+    +10 elemzés – 10 €
+  </button>
+</div>
+
+ 
  <p class="intro" id="introText">
   Többrétegű költői elemzés.<br>
   A költészetet nem lehet pontosan mérni, hiszen az ízlés,
@@ -340,7 +359,7 @@ font-family: "Courier New", monospace;
   <button id="summaryStatusBtn" class="secondary">Összegzés: nincs</button>
   <button id="logoutBtn" class="secondary">Kilépés</button>
  <button id="newPoemBtn" class="secondary">Új vers</button>
- <button id="buyBtn" class="goldAction">10 elemzés vásárlása – 10 €</button>
+
 </div>
 
   <div class="statusBox errorBox" id="errorBox"></div>
