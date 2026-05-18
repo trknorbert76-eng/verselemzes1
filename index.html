@@ -489,22 +489,19 @@ if (userTopBox && userEmail) {
   const freeUses = localStorage.getItem("free_uses") || "0";
   const paidUses = localStorage.getItem("paid_uses") || "0";
 
-const freshFreeUses =
-  consumeData.free_uses !== undefined
-    ? consumeData.free_uses
-    : localStorage.getItem("free_uses") || "0";
+const userTopBox = document.getElementById("userTopBox");
 
-const freshPaidUses =
-  consumeData.paid_uses !== undefined
-    ? consumeData.paid_uses
-    : localStorage.getItem("paid_uses") || "0";
+const userEmail = localStorage.getItem("user_email");
 
-localStorage.setItem("free_uses", String(freshFreeUses));
-localStorage.setItem("paid_uses", String(freshPaidUses));
+if (userTopBox && userEmail) {
 
-userTopBox.textContent =
-  `${localStorage.getItem("user_email")} | Ingyenes: ${freshFreeUses} | Fizetős: ${freshPaidUses}`;
+  const freeUses = localStorage.getItem("free_uses") || "0";
+  const paidUses = localStorage.getItem("paid_uses") || "0";
+
+  userTopBox.textContent =
+    `${userEmail} | Ingyenes: ${freeUses} | Fizetős: ${paidUses}`;
 }
+
 const poemInput = document.getElementById("poemInput");
  poemInput.value = sessionStorage.getItem("poemText") || "";
 const errorBox = document.getElementById("errorBox");
