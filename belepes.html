@@ -116,6 +116,26 @@ button{
   color:#eee;
   border:1px solid #444;
 }
+.passwordWrap{
+  position:relative;
+}
+
+.passwordWrap input{
+  padding-right:52px;
+}
+
+.eyeBtn{
+  position:absolute;
+  right:8px;
+  top:8px;
+  width:auto;
+  padding:7px 10px;
+  margin:0;
+  background:#2b2b2b;
+  color:#eee;
+  border:1px solid #444;
+}
+  
 </style>
 </head>
 
@@ -136,11 +156,14 @@ button{
       placeholder="Email címed"
     />
 
-    <input
-  type="password"
-  id="codeInput"
-  placeholder="Belépőkód (ha már van)"
-/>
+  <div class="passwordWrap">
+  <input
+    type="password"
+    id="codeInput"
+    placeholder="Belépőkód (ha már van)"
+  />
+  <button type="button" id="togglePasswordBtn" class="eyeBtn">👁</button>
+</div>
 
     <button id="registerBtn">
       Új regisztráció
@@ -166,6 +189,19 @@ const WORKER_URL =
 
 const emailInput = document.getElementById("emailInput");
 const codeInput = document.getElementById("codeInput");
+
+  const togglePasswordBtn =
+  document.getElementById("togglePasswordBtn");
+
+togglePasswordBtn.onclick = () => {
+  codeInput.type =
+    codeInput.type === "password" ? "text" : "password";
+
+  togglePasswordBtn.textContent =
+    codeInput.type === "password" ? "👁" : "🙈";
+};
+
+  
 
 const registerBtn = document.getElementById("registerBtn");
 const loginBtn = document.getElementById("loginBtn");
