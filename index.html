@@ -322,6 +322,8 @@ font-family: "Courier New", monospace;
 }
 
 </style>
+<script src="https://www.paypal.com/sdk/js?client-id=IDE_JÖN_A_SANDBOX_CLIENT_ID&currency=EUR&intent=capture"></script>
+   
 </head>
 
 <body>
@@ -333,10 +335,11 @@ font-family: "Courier New", monospace;
   <div id="userTopBox"></div>
 </div>
 
- <div id="buyWrap">
+<div id="buyWrap">
   <button id="buyBtn" class="goldAction smallBuyBtn">
     +10 elemzés – 10 €
   </button>
+  <div id="paypalButtons" style="display:none; margin-top:8px;"></div>
 </div>
 
  
@@ -1577,32 +1580,78 @@ logoutBtn.addEventListener("click", () => {
   resetRunnerInfo();
 });
 
- buyBtn.addEventListener("click", async () => {
-  try {
-    showOk("PayPal fizetés előkészítése...");
+let paypalRendered = false;
 
-    const createResponse = await fetch("https://belepes-public.trknorbert76.workers.dev", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "paypal_create_order",
-        email: localStorage.getItem("user_email")
-      })
-    });
+buyBtn.addEventListener("click", () => {
+  const paypalBox = document.getElementById("paypalButtons");
 
-    const createData = await createResponse.json();
+  paypalBox.style.display = "block";
+  buyBtn.style.display = "none";
 
-    if (!createData.ok) {
-      throw new Error(createData.error || "Nem sikerült létrehozni a PayPal fizetést.");
+  if (paypalRendered) return;
+  paypalRendered = true;
+
+  paypal.Buttons({
+    createOrder: async () => {
+      const response = await fetch("https://belepes-public.trknorbert76.workers.dev", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          action: "paypal_create_order",
+          email: localStorage.getItem("user_email")
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        throw new Error(data.error || "Nem sikerült létrehozni a PayPal fizetést.");
+      }
+
+      return data.orderID;
+    },
+
+    onApprove: async (data) => {
+      showOk("Fizetés ellenőrzése...");
+
+      const response = await fetch("https://belepes-public.trknorbert76.workers.dev", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          action: "paypal_capture_order",
+          email: localStorage.getItem("user_email"),
+          orderID: data.orderID
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.ok) {
+        throw new Error(result.error || "A fizetés nem sikerült.");
+      }
+
+      localStorage.setItem("paid_uses", String(result.paid_uses ?? 0));
+      localStorage.setItem("free_uses", String(result.free_uses ?? 0));
+
+      userTopBox.textContent =
+        `${localStorage.getItem("user_email")} | Ingyenes: ${result.free_uses ?? 0} | Fizetős: ${result.paid_uses ?? 0}`;
+
+      showOk("+10 elemzés jóváírva.");
+    },
+
+    onCancel: () => {
+      showError("A PayPal fizetés megszakadt.");
+    },
+
+    onError: (err) => {
+      console.error(err);
+      showError("PayPal hiba történt.");
     }
-
-    showOk("PayPal rendelés létrejött. Order ID: " + createData.orderID);
-
-  } catch (err) {
-    showError(err.message || "PayPal hiba.");
-  }
+  }).render("#paypalButtons");
 });
 
 function readJSON(key) {
