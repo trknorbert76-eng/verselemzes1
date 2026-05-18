@@ -1561,7 +1561,8 @@ logoutBtn.addEventListener("click", () => {
     return;
   }
 
- localStorage.clear();
+localStorage.removeItem("paid_access_ok");
+
 sessionStorage.clear();
 
 window.location.href = "belepes.html";
