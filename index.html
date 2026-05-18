@@ -321,6 +321,39 @@ font-family: "Courier New", monospace;
   font-size: 0.85rem;
 }
 
+ .wrap {
+  text-align: left;
+}
+
+.intro {
+  text-align: center;
+}
+
+#buyWrap {
+  text-align: right;
+}
+
+#packageMenu {
+  display: none;
+  margin-top: 10px;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+#packageMenu.open {
+  display: flex;
+}
+
+.stepsWrap,
+.stepsTitle,
+.stepNote,
+.statusBox {
+  text-align: left;
+}
+
+ 
+
 </style>
 <script src="https://www.paypal.com/sdk/js?client-id=ATv3HcCUxMF87pPERJ-Jgz7lE4UVNztdcWSSwUaAJCoy2UU5rNF8gvpOG1y9DyvulMP0u08yctYOzIZi&currency=EUR&intent=capture"></script>
    
@@ -1609,9 +1642,9 @@ buyBtn.addEventListener("click", () => {
   const menu = document.getElementById("packageMenu");
 
   if (menu.style.display === "block") {
-    menu.style.display = "none";
+    menu.classList.remove("open");
   } else {
-    menu.style.display = "block";
+    menu.classList.add("open");
   }
 });
 
