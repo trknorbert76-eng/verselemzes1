@@ -319,7 +319,9 @@ localStorage.setItem("saved_email", email);
 showOk(
   `A belépőkódot elküldtük emailben.
 
-Ingyenes elemzések: ${data.free_uses}`
+Ingyenes elemzések: ${data.free_uses}
+
+${data.warning || ""}`
 );
 
   } catch (err) {
