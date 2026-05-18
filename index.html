@@ -1641,6 +1641,9 @@ let paypalRendered = false;
 let selectedPackage = "10";
 
 buyBtn.addEventListener("click", () => {
+ if (sessionStorage.getItem("analysis_running") === "1") {
+  return;
+}
   const menu = document.getElementById("packageMenu");
   const paypalBox = document.getElementById("paypalButtons");
 
