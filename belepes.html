@@ -278,14 +278,12 @@ registerBtn.addEventListener("click", async () => {
       return;
     }
 
-    localStorage.setItem("saved_email", email);
-localStorage.setItem("saved_code", data.access_code);
-codeInput.value = data.access_code;
+localStorage.setItem("saved_email", email);
 
-showCodeResult(
-  "Sikeres regisztráció.",
-  data.access_code,
-  `Ingyenes elemzések:<br>${data.free_uses}<br><br>Másold be a belépőkód mezőbe.`
+showOk(
+  `A belépőkódot elküldtük emailben.
+
+Ingyenes elemzések: ${data.free_uses}`
 );
 
   } catch (err) {
