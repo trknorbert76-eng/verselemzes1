@@ -1642,6 +1642,11 @@ buyBtn.addEventListener("click", () => {
         `${localStorage.getItem("user_email")} | Ingyenes: ${result.free_uses ?? 0} | Fizetős: ${result.paid_uses ?? 0}`;
 
       showOk("+10 elemzés jóváírva.");
+     document.getElementById("paypalButtons").style.display = "none";
+buyBtn.style.display = "inline-block";
+paypalRendered = false;
+
+     
     },
 
     onCancel: () => {
