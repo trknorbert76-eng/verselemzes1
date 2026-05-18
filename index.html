@@ -1648,14 +1648,17 @@ paypalRendered = false;
 
      
     },
-
-   onCancel: () => {
+onCancel: () => {
 
   document.getElementById("paypalButtons").style.display = "none";
   buyBtn.style.display = "inline-block";
   paypalRendered = false;
 
   showError("A PayPal fizetés megszakadt.");
+
+  setTimeout(() => {
+    clearMessages();
+  }, 2500);
 },
     onError: (err) => {
       console.error(err);
