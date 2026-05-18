@@ -1640,12 +1640,17 @@ let selectedPackage = "10";
 
 buyBtn.addEventListener("click", () => {
   const menu = document.getElementById("packageMenu");
+  const paypalBox = document.getElementById("paypalButtons");
 
-  if (menu.style.display === "block") {
+  if (menu.classList.contains("open")) {
     menu.classList.remove("open");
-  } else {
-    menu.classList.add("open");
+    paypalBox.style.display = "none";
+    paypalBox.innerHTML = "";
+    paypalRendered = false;
+    return;
   }
+
+  menu.classList.add("open");
 });
 
 document.querySelectorAll(".packageBtn").forEach(btn => {
