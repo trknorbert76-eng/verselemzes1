@@ -380,6 +380,15 @@ font-family: "Courier New", monospace;
     <div class="contactMail">
       info@verselemzo.net
     </div>
+<div id="editorMark"
+     style="display:none;
+            font-size:0.82rem;
+            color:#8f7740;
+            opacity:0.75;
+            margin-top:-10px;
+            margin-bottom:14px;">
+  Szerkesztette: Török Norbert · 2026
+</div>
   </div>
 
   <div id="userTopBox"></div>
@@ -1830,6 +1839,18 @@ async function runStepWithUi(step, task) {
 
 analyzeBtn.addEventListener("click", async () => {
   const poem = poemInput.value.trim();
+
+ if (poem === "Èva1976") {
+
+  const editorMark = document.getElementById("editorMark");
+
+  if (editorMark) {
+    editorMark.style.display = "block";
+  }
+
+  clearMessages();
+  return;
+}
 
 const freeUses = Number(localStorage.getItem("free_uses") || 0);
 const paidUses = Number(localStorage.getItem("paid_uses") || 0);
