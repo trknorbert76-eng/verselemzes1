@@ -642,6 +642,7 @@ if (!seedResult) {
     });
 
     const seedData = await seedRes.json();
+  console.log("SEED:", seedData);
 
     if (!seedRes.ok || !seedData.ok) {
       throw new Error(seedData.error || "A seed ellenőrzés nem sikerült.");
