@@ -452,14 +452,13 @@ setText(
   ].filter(Boolean).join("\n\n"),
   "Még nincs első önálló indoklás."
 );
-  setText(
+setText(
   "ownConfidence",
-  seedCheck?.understandability_score != null
-    ? "Érthetetlenségi mutató"
+  seedCheck?.suspicious_line_count != null
+    ? `${seedCheck.suspicious_line_count} / ${seedCheck.total_line_count}`
     : "—",
   "—"
 );
-
   // =========================
   // VÉGSŐ ELLENŐRZÉS: KÜLÖN
   // =========================
