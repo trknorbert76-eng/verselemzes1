@@ -431,7 +431,13 @@ function fillView() {
   // JOBB OLDAL: CSAK SEED
   // =========================
   setText("ownImpression", seedCheck?.own_impression, "Még nincs első önálló olvasat.");
-  setText("ownLevel", seedCheck?.own_level, "—");
+setText(
+  "ownLevel",
+  seedCheck?.understandability_score != null
+    ? seedCheck.understandability_score + "%"
+    : "—",
+  "—"
+);
 setText(
   "ownReason",
   [
@@ -446,7 +452,13 @@ setText(
   ].filter(Boolean).join("\n\n"),
   "Még nincs első önálló indoklás."
 );
-  setText("ownConfidence", seedCheck?.own_confidence, "—");
+  setText(
+  "ownConfidence",
+  seedCheck?.understandability_score != null
+    ? "Érthetetlenségi mutató"
+    : "—",
+  "—"
+);
 
   // =========================
   // VÉGSŐ ELLENŐRZÉS: KÜLÖN
