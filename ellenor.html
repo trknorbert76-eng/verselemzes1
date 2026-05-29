@@ -432,7 +432,20 @@ function fillView() {
   // =========================
   setText("ownImpression", seedCheck?.own_impression, "Még nincs első önálló olvasat.");
   setText("ownLevel", seedCheck?.own_level, "—");
-  setText("ownReason", seedCheck?.own_reasoning, "Még nincs első önálló indoklás.");
+setText(
+  "ownReason",
+  [
+    seedCheck?.own_reasoning,
+    seedCheck?.nonsense_reasoning ? "Zagyvaság-szűrés: " + seedCheck.nonsense_reasoning : "",
+    seedCheck?.meaning_stability ? "Jelentés-stabilitás: " + seedCheck.meaning_stability : "",
+    seedCheck?.nonsense_signal ? "Zagyvaság-jelzés: " + seedCheck.nonsense_signal : "",
+    seedCheck?.forced_language ? "Erőltetett nyelv: " + seedCheck.forced_language : "",
+    seedCheck?.forced_rhyme ? "Erőltetett rím: " + seedCheck.forced_rhyme : "",
+    seedCheck?.twisted_syntax ? "Nyakatekertség: " + seedCheck.twisted_syntax : "",
+    seedCheck?.overreading_risk ? "Túlértelmezési kockázat: " + seedCheck.overreading_risk : ""
+  ].filter(Boolean).join("\n\n"),
+  "Még nincs első önálló indoklás."
+);
   setText("ownConfidence", seedCheck?.own_confidence, "—");
 
   // =========================
