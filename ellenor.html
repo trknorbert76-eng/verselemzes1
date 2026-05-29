@@ -211,25 +211,25 @@ button.secondary,
     </section>
 
     <section class="card">
-      <h2>Saját vélemény</h2>
+    <h2>Jelentés-stabilitás</h2>
 
       <div class="field">
-        <span class="label">Első benyomás</span>
+        <span class="label">Jelentés stabilitása</span>
         <div id="ownImpression" class="value">Részben működő, hangulatos, de nem minden pontján egyformán erős vers.</div>
       </div>
 
       <div class="field">
-        <span class="label">Önálló szintérzet</span>
+        <span class="label">Szövegi megalapozottság</span>
         <div id="ownLevel" class="value small">—</div>
       </div>
 
       <div class="field">
-        <span class="label">Miért ezt látja</span>
+        <span class="label">Indoklás</span>
         <div id="ownReason" class="value">Még nincs ellenőrzési indoklás.</div>
       </div>
 
       <div class="field">
-        <span class="label">Biztosság</span>
+        <span class="label">Túlértelmezési kockázat</span>
         <div id="ownConfidence" class="value small">—</div>
       </div>
     </section>
@@ -430,10 +430,10 @@ function fillView() {
   // =========================
   // JOBB OLDAL: CSAK SEED
   // =========================
-  setText("ownImpression", seedCheck?.own_impression, "Még nincs első önálló olvasat.");
-  setText("ownLevel", seedCheck?.own_level, "—");
-  setText("ownReason", seedCheck?.own_reasoning, "Még nincs első önálló indoklás.");
-  setText("ownConfidence", seedCheck?.own_confidence, "—");
+setText("ownImpression", seedCheck?.meaning_stability, "Még nincs jelentés-stabilitás.");
+setText("ownLevel", seedCheck?.nonsense_risk, "—");
+setText("ownReason", seedCheck?.reasoning, "Még nincs koherencia-indoklás.");
+setText("ownConfidence", seedCheck?.overinterpretation_risk, "—");
 
   // =========================
   // VÉGSŐ ELLENŐRZÉS: KÜLÖN
