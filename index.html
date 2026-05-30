@@ -894,6 +894,19 @@ const pipeline = [
     loadingText: "Felismerés folyamatban",
     doneText: "Felismerés kész"
   },
+
+ {
+  key: "checkseed",
+  doneKey: "step_check_seed_done",
+  page: "",
+  targetPage: "ellenor.html",
+  buttonId: "btn-check",
+  boxId: "box-check",
+  noteId: "note-check",
+  waitingText: "Előellenőrzés várakozik",
+  loadingText: "Előellenőrzés folyamatban",
+  doneText: "Előellenőrzés kész"
+},
 {
   key: "interpretation",
   doneKey: "step_interpretation_done",
@@ -1067,6 +1080,30 @@ function setStepLoading(step) {
 
   note.textContent = "Az oldal háttérben dolgozik...";
 }
+
+ function setStepHalfDone(step) {
+  const btn = document.getElementById(step.buttonId);
+  const box = document.getElementById(step.boxId);
+  const note = document.getElementById(step.noteId);
+  const fill = box?.querySelector(".progressFill");
+
+  btn.disabled = true;
+  btn.textContent = "Előellenőrzés kész, értelmezésre vár";
+  btn.classList.remove("loading");
+  btn.classList.add("loading");
+
+  box.classList.remove("done", "real");
+  box.classList.add("loading", "half");
+
+  if (fill) {
+    fill.style.transition = "width 0.6s ease";
+    fill.style.width = "50%";
+  }
+
+  note.textContent = "Az előellenőrzés elkészült, az értelmezés erre fog figyelni.";
+}
+
+
 
 function setStepDone(step) {
   const btn = document.getElementById(step.buttonId);
@@ -1435,9 +1472,12 @@ async function startCheckSeed(poem) {
     const data = await response.json();
 
     if (response.ok && data.ok) {
-      sessionStorage.setItem("analysis_check_seed", JSON.stringify(data.result));
-      updateCheckStatus();
-      appendRunnerInfo("Ellenőr első olvasata elkészült.");
+    sessionStorage.setItem("analysis_check_seed", JSON.stringify(data.result));
+sessionStorage.setItem("step_check_seed_done", Date.now().toString());
+updateCheckStatus();
+appendRunnerInfo("Előellenőrzés elkészült.");
+
+return data.result;
     }
   } catch (err) {
     appendRunnerInfo("Az ellenőr első olvasata most nem készült el.");
@@ -1991,6 +2031,15 @@ updateDepthProgress();
     setStepDone(pipeline[0]);
     appendRunnerInfo("Felismerés kész.");
 
+   // 2. ELŐELLENŐRZÉS — értelmezés előtt indul
+const checkSeedStep = pipeline.find(s => s.key === "checkseed");
+
+setStepLoading(checkSeedStep);
+
+const checkSeed = await startCheckSeed(poem);
+
+setStepHalfDone(checkSeedStep);
+
   // 2. ÉRTELMEZÉS — felismerés után indul
 // 2. ÉRTELMEZÉS — PÁRHUZAMOSRA ÁLLÍTVA
 const interpretationStep = pipeline.find(s => s.key === "interpretation");
@@ -2007,7 +2056,10 @@ setInterpretationFakeTarget(20);
     },
     body: JSON.stringify({
       poem,
-      previous: { kind }
+      previous: {
+  kind,
+  check_seed: checkSeed
+}
     })
   });
 
@@ -2027,17 +2079,10 @@ setInterpretationFakeTarget(20);
 });
 
 const basePrevious = {
-  kind
+  kind,
+  check_seed: checkSeed
 };
-
-  
-
-
-
-    // 2. ELLENŐR SAJÁT ELSŐ OLVASATA — külön indul
-    startCheckSeed(poem);
-
-const depthPromise = startDepthAnalysis(poem);
+   const depthPromise = startDepthAnalysis(poem);
 
 const innerPromise = startInnerMeasure(poem, kind);
 
@@ -2045,6 +2090,7 @@ const impactPromise = interpretationPromise.then(() =>
   startImpactAnalysis(poem)
 );
 
+  
     // 4. RÉSZ-ELEMZŐK — PÁRHUZAMOSAN FUTNAK
     const structureStep = pipeline.find(s => s.key === "structure");
     const rhythmStep = pipeline.find(s => s.key === "rhythm");
