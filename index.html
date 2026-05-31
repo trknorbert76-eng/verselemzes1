@@ -2031,14 +2031,15 @@ updateDepthProgress();
     setStepDone(pipeline[0]);
     appendRunnerInfo("Felismerés kész.");
 
-   // 2. ELŐELLENŐRZÉS — értelmezés előtt indul
+// 2. ELŐELLENŐRZÉS — elindul, de nem blokkolja a többi elemzést
 const checkSeedStep = pipeline.find(s => s.key === "checkseed");
 
 setStepLoading(checkSeedStep);
 
-const checkSeed = await startCheckSeed(poem);
-
-setStepHalfDone(checkSeedStep);
+const checkSeedPromise = startCheckSeed(poem).then(result => {
+  setStepHalfDone(checkSeedStep);
+  return result;
+});
 
   // 2. ÉRTELMEZÉS — felismerés után indul
 // 2. ÉRTELMEZÉS — PÁRHUZAMOSRA ÁLLÍTVA
@@ -2056,9 +2057,9 @@ setInterpretationFakeTarget(20);
     },
     body: JSON.stringify({
       poem,
-      previous: {
+  previous: {
   kind,
-  check_seed: checkSeed
+  check_seed: await checkSeedPromise
 }
     })
   });
@@ -2080,8 +2081,7 @@ setInterpretationFakeTarget(20);
 
 const basePrevious = {
   kind,
-  check_seed: checkSeed
-};
+  };
    const depthPromise = startDepthAnalysis(poem);
 
 const innerPromise = startInnerMeasure(poem, kind);
