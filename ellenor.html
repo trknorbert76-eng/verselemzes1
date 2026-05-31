@@ -208,6 +208,40 @@ button.secondary,
     <section class="card">
       <h2>A vizsgált vers</h2>
       <div id="poemBox" class="poem-box"></div>
+
+      <div class="mini-card" style="margin-top:12px;">
+  <div class="mini-title">Részletes érthetőségi mérés</div>
+
+  <div class="field">
+    <span class="label">Jelentésbizonytalanság</span>
+    <div id="meaningUncertaintyPercent" class="value small">—</div>
+  </div>
+
+  <div class="field">
+    <span class="label">Jelentésbeli kicsavarás</span>
+    <div id="meaningTwistPercent" class="value small">—</div>
+  </div>
+
+  <div class="field">
+    <span class="label">Erőltetett nyelv</span>
+    <div id="forcedLanguagePercent" class="value small">—</div>
+  </div>
+
+  <div class="field">
+    <span class="label">Kényszerrím</span>
+    <div id="forcedRhymePercent" class="value small">—</div>
+  </div>
+
+  <div class="field">
+    <span class="label">Túlértelmezési kockázat</span>
+    <div id="overreadingRiskPercent" class="value small">—</div>
+  </div>
+
+  <div class="field">
+    <span class="label">Kohéziós probléma</span>
+    <div id="cohesionProblemPercent" class="value small">—</div>
+  </div>
+</div>
     </section>
 
     <section class="card">
@@ -458,6 +492,48 @@ setText(
     ? `${seedCheck.suspicious_line_count} / ${seedCheck.total_line_count}`
     : "—",
   "—"
+);
+
+  setText(
+  "meaningUncertaintyPercent",
+  seedCheck?.meaning_uncertainty_percent != null
+    ? seedCheck.meaning_uncertainty_percent + "%"
+    : "—"
+);
+
+setText(
+  "meaningTwistPercent",
+  seedCheck?.meaning_twist_percent != null
+    ? seedCheck.meaning_twist_percent + "%"
+    : "—"
+);
+
+setText(
+  "forcedLanguagePercent",
+  seedCheck?.forced_language_percent != null
+    ? seedCheck.forced_language_percent + "%"
+    : "—"
+);
+
+setText(
+  "forcedRhymePercent",
+  seedCheck?.forced_rhyme_percent != null
+    ? seedCheck.forced_rhyme_percent + "%"
+    : "—"
+);
+
+setText(
+  "overreadingRiskPercent",
+  seedCheck?.overreading_risk_percent != null
+    ? seedCheck.overreading_risk_percent + "%"
+    : "—"
+);
+
+setText(
+  "cohesionProblemPercent",
+  seedCheck?.cohesion_problem_percent != null
+    ? seedCheck.cohesion_problem_percent + "%"
+    : "—"
 );
   // =========================
   // VÉGSŐ ELLENŐRZÉS: KÜLÖN
