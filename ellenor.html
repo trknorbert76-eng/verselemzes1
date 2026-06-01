@@ -476,12 +476,12 @@ setText(
   "ownReason",
   [
     seedCheck?.own_reasoning,
-    seedCheck?.nonsense_reasoning ? "Zagyvaság-szűrés: " + seedCheck.nonsense_reasoning : "",
+    seedCheck?.nonsense_reasoning ? "Érthetőségi megjegyzés: " + seedCheck.nonsense_reasoning : "",
     seedCheck?.meaning_stability ? "Jelentés-stabilitás: " + seedCheck.meaning_stability : "",
     seedCheck?.nonsense_signal ? "Zagyvaság-jelzés: " + seedCheck.nonsense_signal : "",
     seedCheck?.forced_language ? "Erőltetett nyelv: " + seedCheck.forced_language : "",
     seedCheck?.forced_rhyme ? "Erőltetett rím: " + seedCheck.forced_rhyme : "",
-    seedCheck?.twisted_syntax ? "Nyakatekertség: " + seedCheck.twisted_syntax : "",
+    seedCheck?.twisted_syntax ? "Körülményes megfogalmazás: " + seedCheck.twisted_syntax : "",
     seedCheck?.overreading_risk ? "Túlértelmezési kockázat: " + seedCheck.overreading_risk : ""
   ].filter(Boolean).join("\n\n"),
   "Még nincs első önálló indoklás."
