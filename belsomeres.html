@@ -414,6 +414,7 @@ async function runInnerMeasure(forceRefresh = false) {
 
     const kind = safeParse(sessionStorage.getItem("analysis_kind") || "") || {};
 const interpretation = safeParse(sessionStorage.getItem("analysis_interpretation") || "") || {};
+const check_seed = safeParse(sessionStorage.getItem("analysis_check_seed") || "") || {};
 
     const res = await fetch(INNER_WORKER_URL, {
       method: "POST",
@@ -422,9 +423,10 @@ const interpretation = safeParse(sessionStorage.getItem("analysis_interpretation
       },
       body: JSON.stringify({
         poem,
-     previous: {
+  previous: {
   kind,
-  interpretation
+  interpretation,
+  check_seed
 }
       })
     });
