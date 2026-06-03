@@ -414,6 +414,7 @@ function renderResult(result) {
 async function runInterpretation(forceRefresh = false) {
   const poem = sessionStorage.getItem("poem");
   const savedKind = safeParse(sessionStorage.getItem("analysis_kind") || "");
+  const savedSeed = safeParse(sessionStorage.getItem("analysis_check_seed") || "");
 
   if (!poem) {
     window.location.href = "index.html";
@@ -457,12 +458,13 @@ async function runInterpretation(forceRefresh = false) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        poem,
-        previous: {
-          kind: savedKind
-        }
-      })
+ body: JSON.stringify({
+  poem,
+  previous: {
+    kind: savedKind,
+    check_seed: savedSeed
+  }
+})
     });
 
     const data = await res.json();
