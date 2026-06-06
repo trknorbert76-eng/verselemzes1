@@ -609,6 +609,7 @@ const runnerFrame = document.getElementById("runnerFrame");
 let estimateTimerInterval = null;
 let estimateRemainingMs = 0;
   let finalCountdownStarted = false;
+ let extraEstimateTimeGiven = false;
 
 function estimateAnalysisTimeMs(poem) {
   const chars = poem.length;
@@ -652,9 +653,22 @@ function startEstimateTimer(poem) {
 
     estimateTimer.textContent = formatTimeMs(estimateRemainingMs);
 
-    if (estimateRemainingMs <= 0) {
-      estimateTimer.textContent = "00:00,00";
-    }
+  if (estimateRemainingMs <= 0) {
+
+  const checkAlreadyStarted =
+    sessionStorage.getItem("step_check_done") ||
+    sessionStorage.getItem("analysis_check") ||
+    finalCountdownStarted;
+
+  if (!checkAlreadyStarted) {
+    estimateRemainingMs = extraEstimateTimeGiven ? 20000 : 30000;
+    extraEstimateTimeGiven = true;
+  } else {
+    estimateRemainingMs = 0;
+  }
+}
+
+estimateTimer.textContent = formatTimeMs(estimateRemainingMs);
   }, 100);
 }
 
@@ -1992,6 +2006,7 @@ newPoemBtn.classList.add("secondary");
   startEstimateTimer(poem);
  introText.textContent = "Elemzés folyamatban...";
   finalCountdownStarted = false;
+ extraEstimateTimeGiven = false;
 
   try {
     clearStepStorage();
