@@ -1930,11 +1930,13 @@ async function runWorkerStep(stepName, storageKey, doneKey, poem, previous = {})
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      poem,
-      step: stepName,
-      previous
-    })
+   body: JSON.stringify({
+  poem,
+  step: stepName,
+  previous,
+  analysis_id: sessionStorage.getItem("analysis_id"),
+  email: localStorage.getItem("user_email")
+})
   });
 
   const data = await response.json();
