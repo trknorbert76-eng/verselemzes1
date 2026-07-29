@@ -230,7 +230,7 @@
       </div>
 
       <div class="valueBox" id="wolkerVerdictText" style="font-size: 0.95rem; line-height: 1.6;">
-        A Wolker-szűrő méri a verset...
+       A szövegkarakter elemzése folyamatban...
       </div>
     </div>
     <div class="card">
@@ -625,29 +625,49 @@ if (Number.isNaN(finalScore)) {
       const result = data.result;
       const prob = result.ai_probability;
 
-      scoreBox.textContent = prob + "%";
+   scoreBox.textContent = prob + "%";
 
-      if (prob >= 65) {
-        scoreBox.style.color = "#ff6b6b";
-        scoreBox.style.borderColor = "#8a2424";
-        statusText.textContent = "Szövegdiagnosztika";
-        statusText.style.color = "#ff6b6b";
-      } else {
-        scoreBox.style.color = "#51cf66";
-        scoreBox.style.borderColor = "#2b6a37";
-        statusText.textContent = "Organikus / Emberi költészet";
-        statusText.style.color = "#51cf66";
-      }
+if (prob >= 70) {
 
-      verdictText.textContent = result.verdict_summary || "Nincs részletes indoklás.";
-    } else {
-      statusText.textContent = "Hiba az AI-szűrő futásakor";
-      verdictText.textContent = data.error || "Nem sikerült lekérni a Wolker-eredményt.";
-    }
-  } catch (err) {
-    statusText.textContent = "Kapcsolódási hiba";
-    verdictText.textContent = "A Wolker AI-szűrő jelenleg nem érhető el.";
-  }
+  scoreBox.style.color = "#ff6b6b";
+  scoreBox.style.borderColor = "#8a2424";
+  statusText.textContent = "Sterilizált";
+  statusText.style.color = "#ff6b6b";
+
+} else if (prob >= 40) {
+
+  scoreBox.style.color = "#ffd166";
+  scoreBox.style.borderColor = "#8a6b24";
+  statusText.textContent = "Mechanikus";
+  statusText.style.color = "#ffd166";
+
+} else {
+
+  scoreBox.style.color = "#51cf66";
+  scoreBox.style.borderColor = "#2b6a37";
+  statusText.textContent = "Organikus";
+  statusText.style.color = "#51cf66";
+
+}
+
+verdictText.textContent =
+  result.verdict_summary || "Nincs részletes indoklás.";
+
+} else {
+
+  statusText.textContent = "Elemzési hiba";
+  verdictText.textContent =
+    data.error || "Nem sikerült lefuttatni a szövegkarakter-elemzést.";
+
+}
+
+} catch (err) {
+
+  statusText.textContent = "Kapcsolódási hiba";
+  verdictText.textContent =
+    "A szövegkarakter-elemző jelenleg nem érhető el.";
+
+}
 }
 
 // Elindítjuk az oldal betöltésekor
