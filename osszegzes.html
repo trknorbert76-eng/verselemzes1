@@ -605,61 +605,65 @@ if (Number.isNaN(finalScore)) {
     sessionStorage.clear();
     window.location.href = "index.html";
   }
-  async function runWolkerAiFilterDirectly() {
-  const poem = sessionStorage.getItem("poem");
+function renderWolkerResult() {
   const scoreBox = document.getElementById("wolkerScoreBox");
   const statusText = document.getElementById("wolkerStatusText");
   const verdictText = document.getElementById("wolkerVerdictText");
 
-  if (!poem) {
-    if (statusText) statusText.textContent = "Nincs elemzendő vers a tárolóban.";
+  let result = null;
+
+  try {
+    result = JSON.parse(
+      sessionStorage.getItem("analysis_wolker") || "null"
+    );
+  } catch {
+    result = null;
+  }
+
+  if (!result) {
+    scoreBox.textContent = "--%";
+    statusText.textContent = "Nincs eredmény";
+    statusText.style.color = "#aaa";
+    verdictText.textContent =
+      "A szövegkarakter-elemzés eredménye nem található.";
     return;
   }
 
-  const WOLKER_WORKER_URL = "https://wolker-ai-filter.trknorbert76.workers.dev";
+  const prob = Number(result.ai_probability);
 
-  try {
-    const res = await fetch(WOLKER_WORKER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ poem })
-    });
+  if (Number.isNaN(prob)) {
+    scoreBox.textContent = "--%";
+    statusText.textContent = "Nincs eredmény";
+    statusText.style.color = "#aaa";
+    verdictText.textContent =
+      "A szövegkarakter-elemzés nem adott érvényes indexet.";
+    return;
+  }
 
-    const data = await res.json();
+  scoreBox.textContent = prob + "%";
 
-    if (res.ok && data.ok) {
-      const result = data.result;
-      const prob = result.ai_probability;
+  if (prob >= 70) {
+    scoreBox.style.color = "#ff6b6b";
+    scoreBox.style.borderColor = "#8a2424";
+    statusText.textContent = "Sterilizált";
+    statusText.style.color = "#ff6b6b";
 
-   scoreBox.textContent = prob + "%";
+  } else if (prob >= 40) {
+    scoreBox.style.color = "#ffd166";
+    scoreBox.style.borderColor = "#8a6b24";
+    statusText.textContent = "Mechanikus";
+    statusText.style.color = "#ffd166";
 
-if (prob >= 70) {
+  } else {
+    scoreBox.style.color = "#51cf66";
+    scoreBox.style.borderColor = "#2b6a37";
+    statusText.textContent = "Organikus";
+    statusText.style.color = "#51cf66";
+  }
 
-  scoreBox.style.color = "#ff6b6b";
-  scoreBox.style.borderColor = "#8a2424";
-  statusText.textContent = "Sterilizált";
-  statusText.style.color = "#ff6b6b";
-
-} else if (prob >= 40) {
-
-  scoreBox.style.color = "#ffd166";
-  scoreBox.style.borderColor = "#8a6b24";
-  statusText.textContent = "Mechanikus";
-  statusText.style.color = "#ffd166";
-
-} else {
-
-  scoreBox.style.color = "#51cf66";
-  scoreBox.style.borderColor = "#2b6a37";
-  statusText.textContent = "Organikus";
-  statusText.style.color = "#51cf66";
-
+  verdictText.textContent =
+    result.verdict_summary || "Nincs részletes indoklás.";
 }
-
-verdictText.textContent =
-  result.verdict_summary || "Nincs részletes indoklás.";
-
-} else {
 
   statusText.textContent = "Elemzési hiba";
   verdictText.textContent =
@@ -676,8 +680,8 @@ verdictText.textContent =
 }
 }
 
-// Elindítjuk az oldal betöltésekor
-runWolkerAiFilterDirectly();
+// Az indexben már elkészült eredmény megjelenítése
+renderWolkerResult();
 </script>
 
 </body>
