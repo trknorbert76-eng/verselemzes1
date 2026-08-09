@@ -1206,6 +1206,8 @@ function clearStepStorage() {
   sessionStorage.removeItem("analysis_depth");
   sessionStorage.removeItem("analysis_summary");
   sessionStorage.removeItem("analysis_inner_measure");
+ sessionStorage.removeItem("analysis_wolker");
+sessionStorage.removeItem("step_wolker_done");
 
   sessionStorage.removeItem("step_kind_done");
   sessionStorage.removeItem("step_interpretation_done");
@@ -1654,7 +1656,39 @@ async function startImpactAnalysis(poem) {
     throw err;
   }
 }
+async function startWolkerAnalysis(poem) {
+  try {
+    const res = await fetch(WOLKER_WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ poem })
+    });
 
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "A szövegkarakter-elemzés hibával leállt.");
+    }
+
+    sessionStorage.setItem(
+      "analysis_wolker",
+      JSON.stringify(data.result)
+    );
+
+    sessionStorage.setItem(
+      "step_wolker_done",
+      Date.now().toString()
+    );
+
+    return data.result;
+
+  } catch (err) {
+    console.error("Szövegkarakter-elemző hiba:", err);
+    return null;
+  }
+}
 async function startInnerMeasure(poem, kind) {
   try {
     sessionStorage.setItem("step_inner_measure_loading", "1");
@@ -2155,6 +2189,8 @@ const basePrevious = {
 
 const innerPromise = startInnerMeasure(poem, kind);
 
+   const wolkerPromise = startWolkerAnalysis(poem);
+
 const impactPromise = interpretationPromise.then(() =>
   startImpactAnalysis(poem)
 );
@@ -2216,7 +2252,8 @@ const [
   images,
   expression,
   depth,
-  impact
+  impact,
+  wolker
 ] = await Promise.all([
   interpretationPromise,
   innerPromise,
@@ -2225,7 +2262,8 @@ const [
   imageryPromise,
   expressionPromise,
   depthPromise,
-  impactPromise
+  impactPromise,
+  wolkerPromise
 ]);
 
     updateDepthStatus();
