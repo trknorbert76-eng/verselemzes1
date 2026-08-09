@@ -665,20 +665,6 @@ function renderWolkerResult() {
     result.verdict_summary || "Nincs részletes indoklás.";
 }
 
-  statusText.textContent = "Elemzési hiba";
-  verdictText.textContent =
-    data.error || "Nem sikerült lefuttatni a szövegkarakter-elemzést.";
-
-}
-
-} catch (err) {
-
-  statusText.textContent = "Kapcsolódási hiba";
-  verdictText.textContent =
-    "A szövegkarakter-elemző jelenleg nem érhető el.";
-
-}
-}
 
 // Az indexben már elkészült eredmény megjelenítése
 renderWolkerResult();
