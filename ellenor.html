@@ -395,7 +395,6 @@ const NEXT_PAGE = "osszegzes.html";
 
 const noticeEl = document.getElementById("notice");
 
-
 function safeParse(text) {
   try {
     return JSON.parse(text);
@@ -419,7 +418,6 @@ function setText(id, value, fallback = "—") {
   const text = typeof value === "string" && value.trim() ? value.trim() : fallback;
   el.textContent = text;
 }
-
 
 function showNotice(message) {
   noticeEl.textContent = message;
@@ -461,374 +459,184 @@ function fillView() {
   setText("expressionOverall", expression.overall_expression);
   setText("expressionVoice", expression.originality_of_voice);
 
-  // =========================
-  // JOBB OLDAL: CSAK SEED
-  // =========================
+  // SEED ADATOK
   setText("ownImpression", seedCheck?.own_impression, "Még nincs első önálló olvasat.");
-setText(
-  "ownLevel",
-  seedCheck?.understandability_score != null
-    ? seedCheck.understandability_score + "%"
-    : "—",
-  "—"
-);
-setText(
-  "ownReason",
-  [
-    seedCheck?.own_reasoning,
-    seedCheck?.nonsense_reasoning ? "Érthetőségi megjegyzés: " + seedCheck.nonsense_reasoning : "",
-    seedCheck?.meaning_stability ? "Jelentés-stabilitás: " + seedCheck.meaning_stability : "",
-    seedCheck?.nonsense_signal ? "Érthetőségi megjegyzés: " + seedCheck.nonsense_signal : "",
-    seedCheck?.forced_language ? "Erőltetett nyelv: " + seedCheck.forced_language : "",
-    seedCheck?.forced_rhyme ? "Erőltetett rím: " + seedCheck.forced_rhyme : "",
-    seedCheck?.twisted_syntax ? "Körülményes megfogalmazás: " + seedCheck.twisted_syntax : "",
-    seedCheck?.overreading_risk ? "Túlértelmezési kockázat: " + seedCheck.overreading_risk : ""
-  ].filter(Boolean).join("\n\n"),
-  "Még nincs első önálló indoklás."
-);
-setText(
-  "ownConfidence",
-  seedCheck?.suspicious_line_count != null
-    ? `${seedCheck.suspicious_line_count} / ${seedCheck.total_line_count}`
-    : "—",
-  "—"
-);
-
   setText(
-  "meaningUncertaintyPercent",
-  seedCheck?.meaning_uncertainty_percent != null
-    ? seedCheck.meaning_uncertainty_percent + "%"
-    : "—"
-);
-
-setText(
-  "meaningTwistPercent",
-  seedCheck?.meaning_twist_percent != null
-    ? seedCheck.meaning_twist_percent + "%"
-    : "—"
-);
-
-setText(
-  "forcedLanguagePercent",
-  seedCheck?.forced_language_percent != null
-    ? seedCheck.forced_language_percent + "%"
-    : "—"
-);
-
-setText(
-  "forcedRhymePercent",
-  seedCheck?.forced_rhyme_percent != null
-    ? seedCheck.forced_rhyme_percent + "%"
-    : "—"
-);
-
-setText(
-  "overreadingRiskPercent",
-  seedCheck?.overreading_risk_percent != null
-    ? seedCheck.overreading_risk_percent + "%"
-    : "—"
-);
-
-setText(
-  "cohesionProblemPercent",
-  seedCheck?.cohesion_problem_percent != null
-    ? seedCheck.cohesion_problem_percent + "%"
-    : "—"
-);
-  // =========================
-  // VÉGSŐ ELLENŐRZÉS: KÜLÖN
-  // =========================
-  setText(
-    "realisticOverall",
-    finalCheck?.realism_check,
-    seedCheck ? "A végső összevetés még nem készült el." : "—"
+    "ownLevel",
+    seedCheck?.understandability_score != null
+      ? seedCheck.understandability_score + "%"
+      : "—",
+    "—"
   );
   setText(
-    "agreementPoints",
-    finalCheck?.agreement_points,
-    seedCheck ? "A végső összevetés még nem készült el." : "Még nincs adat."
+    "ownReason",
+    [
+      seedCheck?.own_reasoning,
+      seedCheck?.nonsense_reasoning ? "Érthetőségi megjegyzés: " + seedCheck.nonsense_reasoning : "",
+      seedCheck?.meaning_stability ? "Jelentés-stabilitás: " + seedCheck.meaning_stability : "",
+      seedCheck?.nonsense_signal ? "Érthetőségi megjegyzés: " + seedCheck.nonsense_signal : "",
+      seedCheck?.forced_language ? "Erőltetett nyelv: " + seedCheck.forced_language : "",
+      seedCheck?.forced_rhyme ? "Erőltetett rím: " + seedCheck.forced_rhyme : "",
+      seedCheck?.twisted_syntax ? "Körülményes megfogalmazás: " + seedCheck.twisted_syntax : "",
+      seedCheck?.overreading_risk ? "Túlértelmezési kockázat: " + seedCheck.overreading_risk : ""
+    ].filter(Boolean).join("\n\n"),
+    "Még nincs első önálló indoklás."
   );
   setText(
-    "mismatchPoints",
-    finalCheck?.mismatch_points,
-    seedCheck ? "A végső összevetés még nem készült el." : "Még nincs adat."
+    "ownConfidence",
+    seedCheck?.suspicious_line_count != null
+      ? `${seedCheck.suspicious_line_count} / ${seedCheck.total_line_count}`
+      : "—",
+    "—"
   );
-  setText(
-    "distortionDirection",
-    finalCheck?.distortion_direction,
-    seedCheck ? "Még nincs végső döntés." : "—"
-  );
-  setText(
-    "correctionDecision",
-    finalCheck?.correction_direction,
-    seedCheck ? "Még nincs végső döntés." : "—"
-  );
-  
-setText(
-  "innerLayerNote",
-  finalCheck?.inner_layer_note,
-  "Nincs belső réteg megjegyzés."
-);
-  
 
-let correctionText = "Még nincs indoklás.";
-if (finalCheck) {
-  const finalLevel = finalCheck.final_level || "—";
+  setText("meaningUncertaintyPercent", seedCheck?.meaning_uncertainty_percent != null ? seedCheck.meaning_uncertainty_percent + "%" : "—");
+  setText("meaningTwistPercent", seedCheck?.meaning_twist_percent != null ? seedCheck.meaning_twist_percent + "%" : "—");
+  setText("forcedLanguagePercent", seedCheck?.forced_language_percent != null ? seedCheck.forced_language_percent + "%" : "—");
+  setText("forcedRhymePercent", seedCheck?.forced_rhyme_percent != null ? seedCheck.forced_rhyme_percent + "%" : "—");
+  setText("overreadingRiskPercent", seedCheck?.overreading_risk_percent != null ? seedCheck.overreading_risk_percent + "%" : "—");
+  setText("cohesionProblemPercent", seedCheck?.cohesion_problem_percent != null ? seedCheck.cohesion_problem_percent + "%" : "—");
 
-  correctionText =
-    `Végső szint: ${finalLevel}. ` +
-    (finalCheck.correction_reason || "Nincs külön indoklás.");
-} else if (seedCheck) {
-  correctionText = "A végső ellenőri indoklás még nem készült el.";
-}
+  // VÉGSŐ ELLENŐRZÉS
+  setText("realisticOverall", finalCheck?.realism_check, seedCheck ? "A végső összevetés még nem készült el." : "—");
+  setText("agreementPoints", finalCheck?.agreement_points, seedCheck ? "A végső összevetés még nem készült el." : "Még nincs adat.");
+  setText("mismatchPoints", finalCheck?.mismatch_points, seedCheck ? "A végső összevetés még nem készült el." : "Még nincs adat.");
+  setText("distortionDirection", finalCheck?.distortion_direction, seedCheck ? "Még nincs végső döntés." : "—");
+  setText("correctionDecision", finalCheck?.correction_direction, seedCheck ? "Még nincs végső döntés." : "—");
+  setText("innerLayerNote", finalCheck?.inner_layer_note, "Nincs belső réteg megjegyzés.");
+
+  let correctionText = "Még nincs indoklás.";
+  if (finalCheck) {
+    const finalLevel = finalCheck.final_level || "—";
+    correctionText = `Végső szint: ${finalLevel}. ` + (finalCheck.correction_reason || "Nincs külön indoklás.");
+  } else if (seedCheck) {
+    correctionText = "A végső ellenőri indoklás még nem készült el.";
+  }
 
   setText("correctionReason", correctionText, "Még nincs indoklás.");
 }
 
 async function runCheckAnalysis(forceRefresh = false) {
-const poem =
-  sessionStorage.getItem("poem") ||
-  sessionStorage.getItem("poemText");
-  
+  const poem = sessionStorage.getItem("poem") || sessionStorage.getItem("poemText");
 
-  const savedKind = readJSON("analysis_kind");
-  const savedStructure = readJSON("analysis_structure");
-  const savedRhythm = readJSON("analysis_rhythm");
-  const savedImages = readJSON("analysis_images");
-  const savedExpression = readJSON("analysis_expression");
-  const savedDepth = readJSON("analysis_depth");
-  const savedImpact = readJSON("analysis_impact");
-  const savedInner =
-  readJSON("analysis_inner_measure") ||
-  readJSON("analysis_inner") ||
-  readJSON("analysis_belso");
-  const savedWolker = readJSON("analysis_wolker");
+  const kind = unwrapPack(readJSON("analysis_kind"));
+  const structure = unwrapPack(readJSON("analysis_structure"));
+  const rhythm = unwrapPack(readJSON("analysis_rhythm"));
+  const images = unwrapPack(readJSON("analysis_images"));
+  const expression = unwrapPack(readJSON("analysis_expression"));
+  const depth = unwrapPack(readJSON("analysis_depth"));
+  const impact = unwrapPack(readJSON("analysis_impact")) || {};
+  const wolker = unwrapPack(readJSON("analysis_wolker")) || null;
+  const inner = unwrapPack(readJSON("analysis_inner_measure") || readJSON("analysis_inner") || readJSON("analysis_belso")) || null;
+  const interpretation = unwrapPack(readJSON("analysis_interpretation") || readJSON("analysis_ertelmezes") || readJSON("analysis_interpretation_result"));
 
-  const savedInterpretation =
-  readJSON("analysis_interpretation") ||
-  readJSON("analysis_ertelmezes") ||
-  readJSON("analysis_interpretation_result");
-
-  const kind = unwrapPack(savedKind);
-  const structure = unwrapPack(savedStructure);
-  const rhythm = unwrapPack(savedRhythm);
-  const images = unwrapPack(savedImages);
-  const expression = unwrapPack(savedExpression);
-  const depth = unwrapPack(savedDepth);
- const impact = unwrapPack(savedImpact) || {};
-  const wolker = unwrapPack(savedWolker) || null;
-  const inner = unwrapPack(savedInner) || null;
-  const interpretation = unwrapPack(savedInterpretation);
-
-  const depthForCheck = depth ? {
-  secondary_layer: depth.secondary_layer,
-  positive_hit: depth.positive_hit,
-  negative_hit: depth.negative_hit,
-  mixed_hit: depth.mixed_hit,
-  depth_level: depth.depth_level,
-  reasoning: depth.reasoning,
-  checker_min_score: depth.checker_min_score,
-  checker_max_score: depth.checker_max_score
-} : null;
-
-  if (!poem) {
-    window.location.href = "index.html";
-    return;
-  }
-
-  if (!kind) {
-    window.location.href = "felismeres.html";
-    return;
-  }
-
-  if (!structure) {
-    window.location.href = "szerkezet.html";
-    return;
-  }
-
-  if (!rhythm) {
-    window.location.href = "ritmus.html";
-    return;
-  }
-
-  if (!images) {
-    window.location.href = "kepek.html";
-    return;
-  }
-
-  if (!expression) {
-    window.location.href = "kifejezesmod.html";
-    return;
-  }
-
-  if (!depth) {
-    window.location.href = "melyseg.html";
-    return;
-  }
+  if (!poem) { window.location.href = "index.html"; return; }
+  if (!kind) { window.location.href = "felismeres.html"; return; }
+  if (!structure) { window.location.href = "szerkezet.html"; return; }
+  if (!rhythm) { window.location.href = "ritmus.html"; return; }
+  if (!images) { window.location.href = "kepek.html"; return; }
+  if (!expression) { window.location.href = "kifejezesmod.html"; return; }
+  if (!depth) { window.location.href = "melyseg.html"; return; }
 
   if (!inner || inner.overall_score === undefined || inner.overall_score === null) {
-  showNotice("A belső mérés még nem készült el, várok rá...");
-  setTimeout(() => runCheckAnalysis(forceRefresh), 1500);
-  return;
-}
-
-fillView();
-
-const existingFinalCheck = unwrapPack(readJSON("analysis_check"));
-
-if (!existingFinalCheck) {
-  sessionStorage.removeItem("step_check_done");
-  sessionStorage.removeItem("step_summary_done");
-}
-
-if (!forceRefresh) {
-  const savedSeed = unwrapPack(readJSON("analysis_check_seed"));
-  const savedCheck = unwrapPack(readJSON("analysis_check"));
-
-  if (
-    savedSeed &&
-    savedCheck &&
-    inner &&
-    Number(savedCheck.inner_score) === Number(inner.overall_score) &&
-    savedCheck.inner_adjustment !== undefined
-  ) {
-    sessionStorage.setItem("step_check_done", Date.now().toString());
-    fillView();
-    showNotice("A korábbi ellenőrzési eredmény betöltve.");
+    showNotice("A belső mérés még nem készült el, várok rá...");
+    setTimeout(() => runCheckAnalysis(forceRefresh), 1500);
     return;
   }
 
-  if (
-    savedCheck &&
-    inner &&
-    (
-      Number(savedCheck.inner_score) !== Number(inner.overall_score) ||
-      savedCheck.inner_adjustment === undefined
-    )
-  ) {
-    sessionStorage.removeItem("analysis_check");
-    sessionStorage.removeItem("step_check_done");
+  fillView();
+
+  // BIZTONSÁGOS TÁROLÁS-ELLENŐRZÉS: Nem törlünk vakon semmit navigációkor!
+  if (!forceRefresh) {
+    const savedSeed = unwrapPack(readJSON("analysis_check_seed"));
+    const savedCheck = unwrapPack(readJSON("analysis_check"));
+
+    // HA MÁR MEGVAN A KÉSZ ELEMZÉS, NEM HÍVJUK ÚJRA A WORKERT!
+    if (savedSeed && savedCheck) {
+      sessionStorage.setItem("step_check_done", Date.now().toString());
+      fillView();
+      showNotice("A korábbi ellenőrzési eredmény betöltve.");
+      
+      if (autorun) {
+        window.location.href = NEXT_PAGE + "?autorun=1";
+      }
+      return; // Leállítjuk a futást, nem indítunk új felesleges fetch-et!
+    }
   }
-
-  if (savedSeed && !unwrapPack(readJSON("analysis_check"))) {
-    fillView();
-    showNotice("Az első önálló olvasat betöltve, most készül a végső összevetés...");
-  }
-}
-
-
 
   try {
-    // ==================================
-    // 1. SEED - TISZTA ELSŐ OLVASAT
-    // ==================================
-  let seedResult = !forceRefresh
-  ? unwrapPack(readJSON("analysis_check_seed"))
-  : null;
+    // 1. SEED
+    let seedResult = !forceRefresh ? unwrapPack(readJSON("analysis_check_seed")) : null;
 
-if (!seedResult) {
-  showNotice("Az ellenőr első önálló olvasata készül...");
+    if (!seedResult) {
+      showNotice("Az ellenőr első önálló olvasata készül...");
+      const seedRes = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          poem,
+          step: "check_seed",
+          previous: { interpretation }
+        })
+      });
 
-  const seedRes = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-  poem,
-  step: "check_seed",
-  previous: {
-    interpretation
-  }
-})
-    });
+      const seedData = await seedRes.json();
+      if (!seedRes.ok || !seedData.ok) throw new Error(seedData.error || "A seed ellenőrzés nem sikerült.");
 
-    const seedData = await seedRes.json();
-
-    if (!seedRes.ok || !seedData.ok) {
-      throw new Error(seedData.error || "A seed ellenőrzés nem sikerült.");
+      seedResult = seedData.result;
+      sessionStorage.setItem("analysis_check_seed", JSON.stringify(seedResult));
+      sessionStorage.setItem("step_check_seed_done", Date.now().toString());
+      fillView();
     }
 
-  seedResult = seedData.result;
-sessionStorage.setItem("analysis_check_seed", JSON.stringify(seedResult));
-sessionStorage.setItem("step_check_seed_done", Date.now().toString());
-fillView();
-
-} else {
-  fillView();
-  showNotice("A korábbi első olvasat betöltve, készül a végső összevetés...");
-}
-
-    // ==================================
-    // 2. CHECK - ÖSSZEVETÉS
-    // ==================================
+    // 2. CHECK
     showNotice("A végső összevető ellenőrzés készül...");
-
     const checkRes = await fetch(WORKER_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         poem,
         step: "check",
-previous: {
-  kind,
-  interpretation,
-  structure,
-  rhythm,
-  images,
-  expression,
-  depth: depthForCheck,
-  impact,
-  wolker,
-  inner,
-  seed: seedResult
-}
+        previous: {
+          kind, interpretation, structure, rhythm, images, expression,
+          depth: depth ? {
+            secondary_layer: depth.secondary_layer,
+            positive_hit: depth.positive_hit,
+            negative_hit: depth.negative_hit,
+            mixed_hit: depth.mixed_hit,
+            depth_level: depth.depth_level,
+            reasoning: depth.reasoning,
+            checker_min_score: depth.checker_min_score,
+            checker_max_score: depth.checker_max_score
+          } : null,
+          impact, wolker, inner, seed: seedResult
+        }
       })
     });
 
     const checkData = await checkRes.json();
-
-    if (!checkRes.ok || !checkData.ok) {
-      throw new Error(checkData.error || "A végső ellenőrzés nem sikerült.");
-    }
+    if (!checkRes.ok || !checkData.ok) throw new Error(checkData.error || "A végső ellenőrzés nem sikerült.");
 
     const finalCheckResult = checkData.result;
-
-const rangeMin = Number(depth?.checker_min_score ?? 0);
-const rangeMax = Number(depth?.checker_max_score ?? 100);
-
-finalCheckResult.score_range_min = rangeMin;
-finalCheckResult.score_range_max = rangeMax;
+    finalCheckResult.score_range_min = Number(depth?.checker_min_score ?? 0);
+    finalCheckResult.score_range_max = Number(depth?.checker_max_score ?? 100);
 
     sessionStorage.setItem("analysis_check", JSON.stringify(finalCheckResult));
     sessionStorage.setItem("step_check_done", Date.now().toString());
 
-  fillView();
-showNotice("Az ellenőrzés elkészült.");
+    fillView();
+    showNotice("Az ellenőrzés elkészült.");
 
-if (autorun && !forceRefresh) {
-  window.location.href = NEXT_PAGE + "?autorun=1";
-}
-
+    if (autorun) {
+      window.location.href = NEXT_PAGE + "?autorun=1";
+    }
 
   } catch (err) {
     showNotice("Hiba történt az ellenőrzés során: " + (err.message || "ismeretlen hiba"));
-  } finally {
-    
   }
 }
 
-
-setInterval(() => {
-  const seed = unwrapPack(readJSON("analysis_check_seed"));
-  const check = unwrapPack(readJSON("analysis_check"));
-
-  if (seed || check) {
-    fillView();
-  }
-}, 1000);
+// Egyszeri indítás az oldal betöltésekor
 runCheckAnalysis(false);
 </script>
 </body>
