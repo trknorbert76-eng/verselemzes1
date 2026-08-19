@@ -602,6 +602,7 @@ const poem =
   readJSON("analysis_inner_measure") ||
   readJSON("analysis_inner") ||
   readJSON("analysis_belso");
+  const savedWolker = readJSON("analysis_wolker");
 
   const savedInterpretation =
   readJSON("analysis_interpretation") ||
@@ -615,6 +616,7 @@ const poem =
   const expression = unwrapPack(savedExpression);
   const depth = unwrapPack(savedDepth);
  const impact = unwrapPack(savedImpact) || {};
+  const wolker = unwrapPack(savedWolker) || null;
   const inner = unwrapPack(savedInner) || null;
   const interpretation = unwrapPack(savedInterpretation);
 
@@ -779,6 +781,7 @@ previous: {
   expression,
   depth: depthForCheck,
   impact,
+  wolker,
   inner,
   seed: seedResult
 }
