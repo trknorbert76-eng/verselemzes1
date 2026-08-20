@@ -579,6 +579,7 @@ const IMPACT_WORKER_URL = "https://hatas-depth-public.trknorbert76.workers.dev";
 const INTERPRETATION_WORKER_URL = "https://ertelmezes-public.trknorbert76.workers.dev";
 const INNER_WORKER_URL = "https://belsomeres-public.trknorbert76.workers.dev";
  const WOLKER_WORKER_URL = "https://wolker-ai-filter.trknorbert76.workers.dev";
+ const FINAL_SUMMARY_WORKER_URL = "https://osszegzes-public.trknorbert76.workers.dev";
  const TERMS_VERSION = "1.0";
 
   
@@ -1208,6 +1209,8 @@ function clearStepStorage() {
   sessionStorage.removeItem("analysis_inner_measure");
  sessionStorage.removeItem("analysis_wolker");
 sessionStorage.removeItem("step_wolker_done");
+ sessionStorage.removeItem("analysis_final_summary");
+sessionStorage.removeItem("step_final_summary_done");
 
   sessionStorage.removeItem("step_kind_done");
   sessionStorage.removeItem("step_interpretation_done");
@@ -1689,6 +1692,68 @@ async function startWolkerAnalysis(poem) {
     return null;
   }
 }
+
+async function startFinalSummary(poem) {
+  const existing = sessionStorage.getItem("analysis_final_summary");
+
+  if (existing) {
+    return existing;
+  }
+
+  const checkPack = JSON.parse(
+    sessionStorage.getItem("analysis_check") || "null"
+  );
+
+  const check = checkPack?.result || checkPack || {};
+
+  const response = await fetch(FINAL_SUMMARY_WORKER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+      poem,
+
+      final_score: check.final_score,
+      final_level: check.final_level,
+
+      results: {
+        kind: JSON.parse(sessionStorage.getItem("analysis_kind") || "null"),
+        structure: JSON.parse(sessionStorage.getItem("analysis_structure") || "null"),
+        rhythm: JSON.parse(sessionStorage.getItem("analysis_rhythm") || "null"),
+        images: JSON.parse(sessionStorage.getItem("analysis_images") || "null"),
+        expression: JSON.parse(sessionStorage.getItem("analysis_expression") || "null"),
+        depth: JSON.parse(sessionStorage.getItem("analysis_depth") || "null"),
+        impact: JSON.parse(sessionStorage.getItem("analysis_impact") || "null"),
+        inner: JSON.parse(sessionStorage.getItem("analysis_inner_measure") || "null"),
+        interpretation: JSON.parse(sessionStorage.getItem("analysis_interpretation") || "null"),
+        check: JSON.parse(sessionStorage.getItem("analysis_check") || "null"),
+        wolker: JSON.parse(sessionStorage.getItem("analysis_wolker") || "null")
+      }
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.ok || !data.summary_text) {
+    throw new Error(
+      data.error || "A végső AI-összegzés nem készült el."
+    );
+  }
+
+  sessionStorage.setItem(
+    "analysis_final_summary",
+    data.summary_text
+  );
+
+  sessionStorage.setItem(
+    "step_final_summary_done",
+    Date.now().toString()
+  );
+
+  return data.summary_text;
+} 
 async function startInnerMeasure(poem, kind) {
   try {
     sessionStorage.setItem("step_inner_measure_loading", "1");
@@ -2302,6 +2367,12 @@ const check = await runStepWithUi(checkStep, () =>
     );
     finishFakeCheckProgress();
     updateCheckStatus();
+
+   appendRunnerInfo("Végső szöveges összegzés készül...");
+
+await startFinalSummary(poem);
+
+appendRunnerInfo("Végső szöveges összegzés elkészült.");
 
     // 6. ÖSSZEGZÉS — ezt meghagyhatjuk iframe-ben, mert az oldalad valószínűleg sessionStorage-ból dolgozik
     const summaryStep = pipeline.find(s => s.key === "summary");
