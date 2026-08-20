@@ -380,10 +380,8 @@ if (Number.isNaN(finalScore)) {
 
     const finalLevel = getLevelFromScore(finalScore);
 
-  summaryEl.textContent =
-  check?.summary_text?.trim()
-    ? check.summary_text
-    : buildSummary(kind, structure, rhythm, images, expression, finalLevel, check);
+ summaryEl.textContent =
+  buildSummary(kind, structure, rhythm, images, expression, finalLevel, check);
     levelTextEl.textContent = "Szint: " + finalLevel.label;
     pointerEl.style.left = finalScore + "%";
 
