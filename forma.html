@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formai előelemző</title>
+
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    color: #eee;
+    font-family: Georgia, serif;
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: auto;
+    padding: 30px 20px 60px;
+  }
+
+  h1 {
+    margin-top: 0;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 300px;
+    box-sizing: border-box;
+    background: #181818;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  button {
+    margin-top: 14px;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: 9px;
+    background: #d6b36a;
+    color: #111;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 24px;
+  }
+
+  .card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .card h2 {
+    margin-top: 0;
+    color: #d6b36a;
+    font-size: 1.1rem;
+  }
+
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    font-family: Consolas, monospace;
+    font-size: .9rem;
+  }
+
+  .good {
+    color: #77dd77;
+  }
+
+  .warn {
+    color: #ffd166;
+  }
+
+  @media (max-width: 800px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+  <h1>Formai előelemző</h1>
+
+  <p>
+    Ez az oldal AI nélkül vizsgálja a vers alapvető formai szerkezetét.
+  </p>
+
+  <textarea id="poemInput" placeholder="Másold ide a verset..."></textarea>
+
+  <button onclick="runAnalysis()">Elemzés</button>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Első sorral együtt</h2>
+      <pre id="withFirst">—</pre>
+    </div>
+
+    <div class="card">
+      <h2>Első sor nélkül</h2>
+      <pre id="withoutFirst">—</pre>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <h2>Valószínű forma</h2>
+    <pre id="likelyForm">—</pre>
+  </div>
+</div>
+
+<script>
+
+function countSyllables(text) {
+  const cleaned = text
+    .toLowerCase()
+    .replace(/[^a-záàeéèiíìoóòöőuúùüű]/g, "");
+
+  return (
+    cleaned.match(/[aáàeéèiíìoóòöőuúùüű]/g) || []
+  ).length;
+}
+
+
+function normalizeLine(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[.,!?;:"„”'’()\-–—]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+
+function splitIntoStanzas(text) {
+  return text
+    .trim()
+    .split(/\n\s*\n/)
+    .map(block =>
+      block
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+    )
+    .filter(block => block.length);
+}
+
+
+function flattenLines(stanzas) {
+  return stanzas.flat();
+}
+
+
+function findRepeatedLines(lines) {
+  const map = new Map();
+
+  lines.forEach((line, index) => {
+    const key = normalizeLine(line);
+
+    if (!key) return;
+
+    if (!map.has(key)) {
+      map.set(key, {
+        text: line.trim(),
+        positions: []
+      });
+    }
+
+    map.get(key).positions.push(index + 1);
+  });
+
+  return Array.from(map.values())
+    .filter(item => item.positions.length > 1);
+}
+
+
+function getRhymeKey(text) {
+  const words = text.trim().split(/\s+/);
+  if (!words.length) return "";
+
+  let word = words[words.length - 1]
+    .toLowerCase()
+    .replace(/[^a-záéíóöőúüű]/g, "");
+
+  word = word
+    .replace(/á/g, "a")
+    .replace(/é/g, "e")
+    .replace(/í/g, "i")
+    .replace(/[óöő]/g, "o")
+    .replace(/[úüű]/g, "u")
+    .replace(/ly/g, "j");
+
+  return word.slice(-3);
+}
+
+
+function analyzeText(text) {
+
+  const stanzas = splitIntoStanzas(text);
+  const lines = flattenLines(stanzas);
+
+  const syllables = lines.map(line => countSyllables(line));
+
+  const repeatedLines = findRepeatedLines(lines);
+
+  const rhymeKeys = lines.map((line, index) => ({
+    line: index + 1,
+    key: getRhymeKey(line),
+    text: line
+  }));
+
+  return {
+    total_lines: lines.length,
+    stanza_count: stanzas.length,
+    stanza_line_counts: stanzas.map(s => s.length),
+    syllables,
+    repeated_lines: repeatedLines,
+    rhyme_keys: rhymeKeys
+  };
+}
+
+
+function detectKnownForms(data) {
+  const forms = [];
+
+  const {
+    total_lines,
+    stanza_count,
+    stanza_line_counts,
+    syllables,
+    repeated_lines
+  } = data;
+
+  // HAIKU
+  if (
+    total_lines === 3 &&
+    syllables.length === 3 &&
+    syllables[0] === 5 &&
+    syllables[1] === 7 &&
+    syllables[2] === 5
+  ) {
+    forms.push({
+      form: "haiku",
+      confidence: 100
+    });
+  }
+
+  // HAIKUCiklus
+  if (
+    stanza_count >= 2 &&
+    stanza_line_counts.every(n => n === 3)
+  ) {
+    let allHaiku = true;
+
+    let idx = 0;
+
+    for (const stanzaSize of stanza_line_counts) {
+      const pattern = syllables.slice(idx, idx + stanzaSize);
+      idx += stanzaSize;
+
+      if (
+        pattern.length !== 3 ||
+        pattern[0] !== 5 ||
+        pattern[1] !== 7 ||
+        pattern[2] !== 5
+      ) {
+        allHaiku = false;
+        break;
+      }
+    }
+
+    if (allHaiku) {
+      forms.push({
+        form: "haikuciklus",
+        confidence: 100
+      });
+    }
+  }
+
+  // SZONETT JELÖLT
+  if (total_lines === 14) {
+    forms.push({
+      form: "szonettjelölt",
+      confidence: 70
+    });
+  }
+
+  // VILLANELLA
+  if (
+    total_lines === 19 &&
+    stanza_count === 6 &&
+    JSON.stringify(stanza_line_counts) ===
+      JSON.stringify([3,3,3,3,3,4])
+  ) {
+
+    const rep = repeated_lines.map(x => x.positions.join(","));
+
+    const hasA1 = rep.includes("1,6,12,18");
+    const hasA2 = rep.includes("3,9,15,19");
+
+    if (hasA1 && hasA2) {
+      forms.push({
+        form: "villanella",
+        confidence: 100
+      });
+    } else {
+      forms.push({
+        form: "villanellajelölt",
+        confidence: 80
+      });
+    }
+  }
+
+  return forms;
+}
+
+
+function removeFirstLine(text) {
+  const lines = text.split(/\r?\n/);
+
+  let firstNonEmptyFound = false;
+  const result = [];
+
+  for (const line of lines) {
+    if (!firstNonEmptyFound && line.trim()) {
+      firstNonEmptyFound = true;
+      continue;
+    }
+
+    result.push(line);
+  }
+
+  return result.join("\n").trim();
+}
+
+
+function formatResult(data) {
+
+  const repeated = data.repeated_lines.length
+    ? data.repeated_lines.map(item =>
+        `"${item.text}" → ${item.positions.join(", ")}. sor`
+      ).join("\n")
+    : "Nincs ismétlődő teljes sor.";
+
+  const syllableText =
+    data.syllables
+      .map((n, i) => `${i + 1}. sor: ${n}`)
+      .join("\n");
+
+  return `
+Összes sor: ${data.total_lines}
+
+Versszakok száma: ${data.stanza_count}
+
+Sorok versszakonként:
+${data.stanza_line_counts.join(" – ")}
+
+Szótagszámok:
+${syllableText}
+
+Ismétlődő sorok:
+${repeated}
+`.trim();
+}
+
+
+function chooseBestForm(withData, withoutData, firstLine) {
+
+  const withForms = detectKnownForms(withData);
+  const withoutForms = detectKnownForms(withoutData);
+
+  const bestWith = withForms.sort(
+    (a, b) => b.confidence - a.confidence
+  )[0];
+
+  const bestWithout = withoutForms.sort(
+    (a, b) => b.confidence - a.confidence
+  )[0];
+
+  if (!bestWith && !bestWithout) {
+    return `
+Nem találtam biztos kötött formát.
+
+Valószínű besorolás:
+szabadvers vagy más, jelenleg nem definiált forma.
+`.trim();
+  }
+
+  if (
+    bestWithout &&
+    (!bestWith || bestWithout.confidence > bestWith.confidence)
+  ) {
+    return `
+Valószínű cím:
+"${firstLine}"
+
+Valószínű versforma:
+${bestWithout.form}
+
+Bizonyosság:
+${bestWithout.confidence}%
+
+Megjegyzés:
+Az első sor elhagyásával erősebb ismert forma rajzolódik ki.
+`.trim();
+  }
+
+  return `
+Valószínű versforma:
+${bestWith.form}
+
+Bizonyosság:
+${bestWith.confidence}%
+
+Az első sor valószínűleg a vers része.
+`.trim();
+}
+
+
+function runAnalysis() {
+
+  const text = document
+    .getElementById("poemInput")
+    .value
+    .trim();
+
+  if (!text) {
+    alert("Másolj be egy verset.");
+    return;
+  }
+
+  const firstLine =
+    text.split(/\r?\n/).find(line => line.trim()) || "";
+
+  const withData = analyzeText(text);
+
+  const withoutText = removeFirstLine(text);
+  const withoutData = analyzeText(withoutText);
+
+  document.getElementById("withFirst").textContent =
+    formatResult(withData);
+
+  document.getElementById("withoutFirst").textContent =
+    formatResult(withoutData);
+
+  document.getElementById("likelyForm").textContent =
+    chooseBestForm(withData, withoutData, firstLine);
+}
+
+</script>
+
+</body>
+</html>
