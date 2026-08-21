@@ -221,6 +221,16 @@ button.next {
       <h2>Indoklás</h2>
 
       <div class="infoRow">
+  <div class="miniTitle">Versforma</div>
+  <div class="valueBox" id="formType">—</div>
+</div>
+
+<div class="infoRow">
+  <div class="miniTitle">Formafelismerés</div>
+  <div class="valueBox" id="formReasoning">—</div>
+</div>
+
+      <div class="infoRow">
   <div class="miniTitle">Stílusjelleg</div>
   <div class="valueBox" id="styleLabel">—</div>
 </div>
@@ -277,6 +287,8 @@ const secondaryTraitsEl = document.getElementById("secondaryTraits");
 const speechModeEl = document.getElementById("speechMode");
 const moodEl = document.getElementById("mood");
 const reasoningEl = document.getElementById("reasoning");
+  const formTypeEl = document.getElementById("formType");
+const formReasoningEl = document.getElementById("formReasoning");
   const styleLabelEl = document.getElementById("styleLabel");
 const styleTraitsEl = document.getElementById("styleTraits");
 const styleReasoningEl = document.getElementById("styleReasoning");
@@ -334,6 +346,11 @@ function fillList(items) {
 
 function renderResult(result) {
   mainTypeEl.textContent = result.main_type || "Nincs megadva";
+  formTypeEl.textContent =
+  result.form_type || "Nem azonosítható egyértelműen";
+
+formReasoningEl.textContent =
+  result.form_reasoning || "Nincs külön formai indoklás.";
   speechModeEl.textContent = result.speech_mode || "Nincs megadva";
   moodEl.textContent = result.mood || "Nincs megadva";
   styleLabelEl.textContent = result.style_label || "Nincs megadva";
