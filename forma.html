@@ -630,11 +630,41 @@ if (crownSection) {
 
   const crownData = analyzeText(crownText);
 
-  const crownForms = detectKnownForms(crownData);
+const crownForms = detectKnownForms(crownData);
 
-  const crownMatch = crownForms.find(
-    item => item.form === "szonettkoszorú"
+let crownMatch = crownForms.find(
+  item => item.form === "szonettkoszorú"
+);
+
+// Ha a teljes 210 soros detektor nem kapta el,
+// keressük meg a szonettkoszorú ujjlenyomatát
+// a kivágott szakaszon belül.
+if (!crownMatch) {
+  const strongRepeatedLines = crownData.repeated_lines.filter(
+    item => item.positions.length >= 3
   );
+
+  if (strongRepeatedLines.length >= 14) {
+    const crownLeaderLines = strongRepeatedLines.slice(0, 14);
+
+    const accepted = crownLeaderLines.filter(item => {
+      const n = countSyllables(item.text);
+      return n === 10 || n === 11 || n === 12;
+    }).length;
+
+    let confidence = 75;
+
+    if (accepted === 14) confidence = 100;
+    else if (accepted >= 12) confidence = 95;
+    else if (accepted >= 10) confidence = 90;
+    else if (accepted >= 8) confidence = 80;
+
+    crownMatch = {
+      form: "szonettkoszorú",
+      confidence
+    };
+  }
+}
 
   if (crownMatch) {
     const hasBefore = crownSection.startIndex > 0;
