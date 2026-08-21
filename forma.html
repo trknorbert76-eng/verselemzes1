@@ -186,6 +186,53 @@ function normalizeLine(text) {
   return null;
 }
 
+  function detectCrownSection(text) {
+  const lines = text.split(/\r?\n/);
+
+  let startIndex = -1;
+  let masterIndex = -1;
+  let endIndex = -1;
+
+  lines.forEach((line, i) => {
+    const t = line.trim().toLowerCase();
+
+    if (
+      startIndex === -1 &&
+      (t === "szonettkoszorú" || t === "szonettkoszorú:")
+    ) {
+      startIndex = i;
+    }
+
+    if (
+      masterIndex === -1 &&
+      (t === "mesterszonett" || t === "mester szonett")
+    ) {
+      masterIndex = i;
+    }
+
+    if (
+      masterIndex !== -1 &&
+      endIndex === -1 &&
+      (
+        t === "befejezés" ||
+        t === "befejezés:" ||
+        t === "utószó" ||
+        t === "utószó:"
+      )
+    ) {
+      endIndex = i;
+    }
+  });
+
+  if (startIndex === -1) return null;
+
+  return {
+    startIndex,
+    masterIndex,
+    endIndex: endIndex === -1 ? lines.length : endIndex
+  };
+}
+
 
 function splitIntoStanzas(text) {
   return text
@@ -569,14 +616,62 @@ function runAnalysis() {
   const withoutText = removeFirstLine(text);
   const withoutData = analyzeText(withoutText);
 
+  const crownSection = detectCrownSection(text);
+
+let crownInfo = null;
+
+if (crownSection) {
+  const rawLines = text.split(/\r?\n/);
+
+  const crownText = rawLines
+    .slice(crownSection.startIndex, crownSection.endIndex)
+    .join("\n")
+    .trim();
+
+  const crownData = analyzeText(crownText);
+
+  const crownForms = detectKnownForms(crownData);
+
+  const crownMatch = crownForms.find(
+    item => item.form === "szonettkoszorú"
+  );
+
+  if (crownMatch) {
+    const hasBefore = crownSection.startIndex > 0;
+    const hasAfter = crownSection.endIndex < rawLines.length;
+
+    crownInfo = {
+      form:
+        hasBefore || hasAfter
+          ? "szonettkoszorú keretező szakaszokkal"
+          : "szonettkoszorú",
+      confidence: crownMatch.confidence
+    };
+  }
+}
+  
+
   document.getElementById("withFirst").textContent =
     formatResult(withData);
 
   document.getElementById("withoutFirst").textContent =
     formatResult(withoutData);
 
+if (crownInfo) {
+  document.getElementById("likelyForm").textContent = `
+Valószínű versforma:
+${crownInfo.form}
+
+Bizonyosság:
+${crownInfo.confidence}%
+
+Megjegyzés:
+A szöveg belsejében felismerhető a szonettkoszorú teljes szerkezete.
+`.trim();
+} else {
   document.getElementById("likelyForm").textContent =
     chooseBestForm(withData, withoutData, firstLine);
+}
 }
 
 </script>
