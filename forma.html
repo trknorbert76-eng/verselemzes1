@@ -144,6 +144,48 @@ function normalizeLine(text) {
     .replace(/\s+/g, " ");
 }
 
+  function detectSectionHeader(line) {
+  const raw = line.trim();
+
+  const t = raw
+    .toLowerCase()
+    .replace(/[–—_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Szonettszámozások felismerése:
+  // 1. SZONETT
+  // 1 SZONETT
+  // SZONETT 1
+  // --- 1. SZONETT ---
+  // --- SZONETT 1 ---
+
+  if (
+    /^\d{1,2}\.?\s*szonett$/.test(t) ||
+    /^szonett\s*\d{1,2}\.?$/.test(t)
+  ) {
+    const m = t.match(/\d{1,2}/);
+
+    return {
+      type: "sonnet",
+      number: m ? Number(m[0]) : null,
+      original: raw
+    };
+  }
+
+  // MESTERSZONETT / MESTER SZONETT
+
+  if (/^mester\s*szonett$/.test(t)) {
+    return {
+      type: "master",
+      number: null,
+      original: raw
+    };
+  }
+
+  return null;
+}
+
 
 function splitIntoStanzas(text) {
   return text
@@ -154,6 +196,7 @@ function splitIntoStanzas(text) {
         .split(/\r?\n/)
         .map(line => line.trim())
         .filter(Boolean)
+        .filter(line => !detectSectionHeader(line))
     )
     .filter(block => block.length);
 }
