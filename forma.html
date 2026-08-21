@@ -616,72 +616,32 @@ function runAnalysis() {
   const withoutText = removeFirstLine(text);
   const withoutData = analyzeText(withoutText);
 
-  const crownSection = detectCrownSection(text);
-
 let crownInfo = null;
 
-if (crownSection) {
-  const rawLines = text.split(/\r?\n/);
-
-  const crownText = rawLines
-    .slice(crownSection.startIndex, crownSection.endIndex)
-    .join("\n")
-    .trim();
-
-  const crownData = analyzeText(crownText);
-
-const crownForms = detectKnownForms(crownData);
-
-let crownMatch = crownForms.find(
-  item => item.form === "szonettkoszorú"
+const strongRepeatedLines = withData.repeated_lines.filter(
+  item => item.positions.length >= 3
 );
 
-// Ha a teljes 210 soros detektor nem kapta el,
-// keressük meg a szonettkoszorú ujjlenyomatát
-// a kivágott szakaszon belül.
-if (!crownMatch) {
-  const strongRepeatedLines = crownData.repeated_lines.filter(
-    item => item.positions.length >= 3
-  );
+if (strongRepeatedLines.length >= 14) {
 
-  if (strongRepeatedLines.length >= 14) {
-    const crownLeaderLines = strongRepeatedLines.slice(0, 14);
+  const leaderLines = strongRepeatedLines.slice(0, 14);
 
-    const accepted = crownLeaderLines.filter(item => {
-      const n = countSyllables(item.text);
-      return n === 10 || n === 11 || n === 12;
-    }).length;
+  const accepted = leaderLines.filter(item => {
+    const n = countSyllables(item.text);
+    return n === 10 || n === 11 || n === 12;
+  }).length;
 
-    let confidence = 75;
-
-    if (accepted === 14) confidence = 100;
-    else if (accepted >= 12) confidence = 95;
-    else if (accepted >= 10) confidence = 90;
-    else if (accepted >= 8) confidence = 80;
-
-    crownMatch = {
-      form: "szonettkoszorú",
-      confidence
-    };
-  }
-}
-
-  if (crownMatch) {
-    const hasBefore = crownSection.startIndex > 0;
-    const hasAfter = crownSection.endIndex < rawLines.length;
-
+  if (accepted >= 10) {
     crownInfo = {
-      form:
-        hasBefore || hasAfter
-          ? "szonettkoszorú keretező szakaszokkal"
-          : "szonettkoszorú",
-      confidence: crownMatch.confidence
+      form: "szonettkoszorú keretező szakaszokkal",
+      confidence:
+        accepted === 14 ? 100 :
+        accepted >= 12 ? 95 : 90
     };
   }
 }
-  
 
-  document.getElementById("withFirst").textContent =
+ document.getElementById("withFirst").textContent =
     formatResult(withData);
 
   document.getElementById("withoutFirst").textContent =
