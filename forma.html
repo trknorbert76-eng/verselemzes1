@@ -140,7 +140,18 @@ function normalizeLine(text) {
   return text
     .toLowerCase()
     .trim()
+
+    // Rossz irányú ékezetek egységesítése
+    .replace(/à/g, "á")
+    .replace(/è/g, "é")
+    .replace(/ì/g, "í")
+    .replace(/ò/g, "ó")
+    .replace(/ù/g, "ú")
+
+    // Írásjelek figyelmen kívül hagyása
     .replace(/[.,!?;:"„”'’()\-–—]/g, "")
+
+    // Többszörös szóközök egységesítése
     .replace(/\s+/g, " ");
 }
 
