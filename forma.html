@@ -367,6 +367,56 @@ if (total_lines === 14) {
   });
 }
 
+  // SZONETTKOSZORÚ
+if (total_lines === 210) {
+
+  const acceptedSyllables = syllables.filter(
+    n => n === 10 || n === 11 || n === 12
+  ).length;
+
+  const repeated = repeated_lines.map(item => ({
+    text: normalizeLine(item.text),
+    positions: item.positions
+  }));
+
+  // 14 láncsor várható:
+  // 1. szonett utolsó sora = 2. első sora
+  // ...
+  // 14. utolsó sora = 1. első sora
+  //
+  // A mesterszonett miatt ezek a vezérsorok
+  // összesen legalább 3-szor jelenhetnek meg.
+
+  const strongRepeatedLines = repeated.filter(
+    item => item.positions.length >= 3
+  );
+
+  let confidence = 60;
+
+  // Szótagfegyelem
+  if (acceptedSyllables >= 200) {
+    confidence += 15;
+  } else if (acceptedSyllables >= 185) {
+    confidence += 10;
+  } else if (acceptedSyllables >= 170) {
+    confidence += 5;
+  }
+
+  // Ismétlődő vezérsorok
+  if (strongRepeatedLines.length >= 14) {
+    confidence += 25;
+  } else if (strongRepeatedLines.length >= 12) {
+    confidence += 20;
+  } else if (strongRepeatedLines.length >= 10) {
+    confidence += 10;
+  }
+
+  forms.push({
+    form: "szonettkoszorú",
+    confidence: Math.min(confidence, 100)
+  });
+}
+
   // VILLANELLA
   if (
     total_lines === 19 &&
