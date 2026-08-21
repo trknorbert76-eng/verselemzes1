@@ -290,13 +290,39 @@ function detectKnownForms(data) {
     }
   }
 
-  // SZONETT JELÖLT
-  if (total_lines === 14) {
-    forms.push({
-      form: "szonettjelölt",
-      confidence: 70
-    });
+// SZONETT JELÖLT
+if (total_lines === 14) {
+
+  const acceptedSyllables = syllables.filter(
+    n => n === 10 || n === 11 || n === 12
+  ).length;
+
+  let confidence = 50;
+
+  // Szótagszerkezet
+  if (acceptedSyllables === 14) {
+    confidence += 30;
+  } else if (acceptedSyllables >= 12) {
+    confidence += 25;
+  } else if (acceptedSyllables >= 10) {
+    confidence += 15;
+  } else if (acceptedSyllables >= 8) {
+    confidence += 5;
   }
+
+  // Klasszikus 4–4–3–3 strófatagolás
+  if (
+    JSON.stringify(stanza_line_counts) ===
+    JSON.stringify([4,4,3,3])
+  ) {
+    confidence += 10;
+  }
+
+  forms.push({
+    form: "szonettjelölt",
+    confidence: Math.min(confidence, 95)
+  });
+}
 
   // VILLANELLA
   if (
