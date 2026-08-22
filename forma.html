@@ -594,30 +594,61 @@ if (total_lines === 210) {
     }
   }
 
-  // SESTINA — 6×6 sor + 3 soros envoi; hat végszó szabályos rotációja.
-  if (
-    total_lines === 39 &&
-    stanza_count === 7 &&
-    JSON.stringify(stanza_line_counts) === JSON.stringify([6,6,6,6,6,6,3])
-  ) {
-    const first = lineTexts.slice(0,6).map(endWord);
-    const patterns = [
-      [0,1,2,3,4,5],
-      [5,0,4,1,3,2],
-      [2,5,3,0,1,4],
-      [4,2,1,5,0,3],
-      [3,4,0,2,5,1],
-      [1,3,5,4,2,0]
-    ];
-    let matches = 0;
-    for (let st = 0; st < 6; st++) {
-      const actual = lineTexts.slice(st*6, st*6+6).map(endWord);
-      const expected = patterns[st].map(i => first[i]);
-      for (let j=0; j<6; j++) if (actual[j] === expected[j]) matches++;
+ // SESTINA — 6×6 sor + 3 soros envoi; hat végszó szabályos rotációja.
+if (
+  total_lines === 39 &&
+  stanza_count === 7 &&
+  JSON.stringify(stanza_line_counts) === JSON.stringify([6,6,6,6,6,6,3])
+) {
+  const first = lineTexts.slice(0,6).map(endWord);
+
+  const patterns = [
+    [0,1,2,3,4,5],
+    [5,0,4,1,3,2],
+    [2,5,3,0,1,4],
+    [4,2,1,5,0,3],
+    [3,4,0,2,5,1],
+    [1,3,5,4,2,0]
+  ];
+
+  let matches = 0;
+  const errors = [];
+
+  for (let st = 0; st < 6; st++) {
+    const actual = lineTexts
+      .slice(st * 6, st * 6 + 6)
+      .map(endWord);
+
+    const expected = patterns[st].map(i => first[i]);
+
+    for (let j = 0; j < 6; j++) {
+      if (actual[j] === expected[j]) {
+        matches++;
+      } else {
+        errors.push({
+          stanza: st + 1,
+          stanzaLine: j + 1,
+          line: st * 6 + j + 1,
+          expected: expected[j],
+          actual: actual[j]
+        });
+      }
     }
-    if (matches === 36) forms.push({ form: "sestina", confidence: 100 });
-    else if (matches >= 30) forms.push({ form: "sestinajelölt", confidence: 88 });
   }
+
+  if (matches === 36) {
+    forms.push({
+      form: "sestina",
+      confidence: 100
+    });
+  } else if (matches >= 30) {
+    forms.push({
+      form: "sestinajelölt",
+      confidence: 88,
+      errors: errors
+    });
+  }
+}
 
   // RONDEAU-JELÖLT — 15 sor, 3 strófa (5–4–6), rövid visszatérő refrénnel.
   // Rím nélkül csak jelöltként nevezzük meg.
