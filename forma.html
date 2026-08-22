@@ -811,12 +811,24 @@ Az első sor elhagyásával erősebb ismert forma rajzolódik ki.
 `.trim();
   }
 
+  let errorText = "";
+
+  if (bestWith.errors && bestWith.errors.length) {
+    errorText = "\n\nFormai eltérések:\n" +
+      bestWith.errors.map(err =>
+        `${err.stanza}. versszak ${err.stanzaLine}. sora ` +
+        `(teljes vers ${err.line}. sora)\n` +
+        `Várt végszó: "${err.expected}"\n` +
+        `Talált végszó: "${err.actual}"`
+      ).join("\n\n");
+  }
+
   return `
 Valószínű versforma:
 ${bestWith.form}
 
 Bizonyosság:
-${bestWith.confidence}%
+${bestWith.confidence}%${errorText}
 
 Az első sor valószínűleg a vers része.
 `.trim();
