@@ -516,6 +516,176 @@ if (total_lines === 210) {
     }
   }
 
+
+
+  // ===== TOVÁBBI, RÍMFÜGGETLEN FORMAFELISMERÉSEK =====
+  // A fenti, már tesztelt felismerések változatlanul maradtak.
+  const lineTexts = (data.rhyme_keys || []).map(x => x.text);
+  const normalizedLines = lineTexts.map(normalizeLine);
+
+  function sameLine(a, b) {
+    return normalizedLines[a - 1] &&
+           normalizedLines[a - 1] === normalizedLines[b - 1];
+  }
+
+  function endWord(line) {
+    const words = normalizeLine(line).split(/\s+/).filter(Boolean);
+    return words.length ? words[words.length - 1] : "";
+  }
+
+  // TANKA — 5–7–5–7–7
+  if (
+    total_lines === 5 &&
+    JSON.stringify(syllables) === JSON.stringify([5,7,5,7,7])
+  ) {
+    forms.push({ form: "tanka", confidence: 100 });
+  }
+
+  // TANKACIKLUS
+  if (stanza_count >= 2 && stanza_line_counts.every(n => n === 5)) {
+    let ok = true, i = 0;
+    for (const size of stanza_line_counts) {
+      const p = syllables.slice(i, i + size); i += size;
+      if (JSON.stringify(p) !== JSON.stringify([5,7,5,7,7])) { ok = false; break; }
+    }
+    if (ok) forms.push({ form: "tankaciklus", confidence: 100 });
+  }
+
+  // SEDÓKA — 5–7–7 / 5–7–7
+  if (
+    total_lines === 6 &&
+    JSON.stringify(syllables) === JSON.stringify([5,7,7,5,7,7])
+  ) {
+    forms.push({ form: "sedóka", confidence: 100 });
+  }
+
+  // SEDÓKACIKLUS
+  if (stanza_count >= 2 && stanza_line_counts.every(n => n === 6)) {
+    let ok = true, i = 0;
+    for (const size of stanza_line_counts) {
+      const p = syllables.slice(i, i + size); i += size;
+      if (JSON.stringify(p) !== JSON.stringify([5,7,7,5,7,7])) { ok = false; break; }
+    }
+    if (ok) forms.push({ form: "sedókaciklus", confidence: 100 });
+  }
+
+  // TRIOLET — 8 sor; 1=4=7 és 2=8
+  if (total_lines === 8) {
+    if (sameLine(1,4) && sameLine(1,7) && sameLine(2,8)) {
+      forms.push({ form: "triolet", confidence: 98 });
+    }
+  }
+
+  // PANTUM / PANTOUM — négysoros strófák; az előző 2. és 4. sora
+  // a következő strófa 1. és 3. soraként tér vissza.
+  if (stanza_count >= 3 && stanza_line_counts.every(n => n === 4)) {
+    let links = 0;
+    for (let st = 0; st < stanza_count - 1; st++) {
+      const a = st * 4;
+      const b = (st + 1) * 4;
+      if (normalizedLines[a + 1] === normalizedLines[b]) links++;
+      if (normalizedLines[a + 3] === normalizedLines[b + 2]) links++;
+    }
+    const expected = (stanza_count - 1) * 2;
+    if (links === expected) {
+      forms.push({ form: "pantum", confidence: 98 });
+    } else if (links >= Math.max(4, Math.ceil(expected * 0.75))) {
+      forms.push({ form: "pantumjelölt", confidence: 82 });
+    }
+  }
+
+  // SESTINA — 6×6 sor + 3 soros envoi; hat végszó szabályos rotációja.
+  if (
+    total_lines === 39 &&
+    stanza_count === 7 &&
+    JSON.stringify(stanza_line_counts) === JSON.stringify([6,6,6,6,6,6,3])
+  ) {
+    const first = lineTexts.slice(0,6).map(endWord);
+    const patterns = [
+      [0,1,2,3,4,5],
+      [5,0,4,1,3,2],
+      [2,5,3,0,1,4],
+      [4,2,1,5,0,3],
+      [3,4,0,2,5,1],
+      [1,3,5,4,2,0]
+    ];
+    let matches = 0;
+    for (let st = 0; st < 6; st++) {
+      const actual = lineTexts.slice(st*6, st*6+6).map(endWord);
+      const expected = patterns[st].map(i => first[i]);
+      for (let j=0; j<6; j++) if (actual[j] === expected[j]) matches++;
+    }
+    if (matches === 36) forms.push({ form: "sestina", confidence: 100 });
+    else if (matches >= 30) forms.push({ form: "sestinajelölt", confidence: 88 });
+  }
+
+  // RONDEAU-JELÖLT — 15 sor, 3 strófa (5–4–6), rövid visszatérő refrénnel.
+  // Rím nélkül csak jelöltként nevezzük meg.
+  if (
+    total_lines === 15 && stanza_count === 3 &&
+    JSON.stringify(stanza_line_counts) === JSON.stringify([5,4,6])
+  ) {
+    forms.push({ form: "rondeau-jelölt", confidence: 68 });
+  }
+
+  // RONDEL-JELÖLT — 13 vagy 14 sor, tipikus 4–4–5 / 4–4–6 tagolással,
+  // és visszatérő teljes sorral.
+  if (
+    (total_lines === 13 || total_lines === 14) &&
+    stanza_count === 3 &&
+    ((total_lines === 13 && JSON.stringify(stanza_line_counts) === JSON.stringify([4,4,5])) ||
+     (total_lines === 14 && JSON.stringify(stanza_line_counts) === JSON.stringify([4,4,6]))) &&
+    repeated_lines.length >= 1
+  ) {
+    forms.push({ form: "rondel-jelölt", confidence: 72 });
+  }
+
+  // ÁLTALÁNOS REFÉNES VERS — legalább 3 strófa és egy teljes sor legalább 3-szor ismétlődik.
+  if (
+    stanza_count >= 3 &&
+    repeated_lines.some(x => x.positions.length >= 3)
+  ) {
+    forms.push({ form: "refrénes vers", confidence: 55 });
+  }
+
+  // KERETES VERS — az első és az utolsó teljes sor azonos.
+  if (total_lines >= 4 && sameLine(1, total_lines)) {
+    forms.push({ form: "keretes vers", confidence: 58 });
+  }
+
+  // SZABÁLYOS STRÓFAVERS — azonos hosszúságú strófák.
+  // Csak általános szerkezeti besorolás, ezért alacsonyabb bizonyosság.
+  if (
+    stanza_count >= 2 &&
+    stanza_line_counts.every(n => n === stanza_line_counts[0])
+  ) {
+    const n = stanza_line_counts[0];
+    const names = {2:"kétsoros",3:"tercinás",4:"négysoros",5:"ötsoros",6:"hatsoros",7:"hétsoros",8:"nyolcsoros"};
+    if (names[n]) forms.push({ form: `${names[n]} strófavers`, confidence: 45 });
+  }
+
+  // EGYENLETES SZÓTAGSZÁMÚ VERS — legalább 6 sor, a sorok legalább 90%-a azonos szótagszámú.
+  if (total_lines >= 6 && syllables.length) {
+    const freq = {};
+    syllables.forEach(n => freq[n] = (freq[n] || 0) + 1);
+    const best = Object.entries(freq).sort((a,b) => b[1]-a[1])[0];
+    if (best && best[1] / total_lines >= 0.90) {
+      forms.push({ form: `egyenletes ${best[0]} szótagos vers`, confidence: 52 });
+    }
+  }
+
+  // VÁLTAKOZÓ SZÓTAGSÉMA — legalább 6 sor; ABAB... jellegű kétértékű minta.
+  if (total_lines >= 6) {
+    const a = syllables[0], b = syllables[1];
+    if (a !== b) {
+      let ok = true;
+      for (let i=0; i<syllables.length; i++) {
+        if (syllables[i] !== (i % 2 === 0 ? a : b)) { ok = false; break; }
+      }
+      if (ok) forms.push({ form: `váltakozó ${a}–${b} szótagos vers`, confidence: 60 });
+    }
+  }
+
   return forms;
 }
 
