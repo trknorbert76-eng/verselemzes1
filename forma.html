@@ -409,25 +409,16 @@ function detectKnownForms(data) {
     }
   }
 
-// SZONETT JELÖLT
-if (total_lines === 14) {
+// SZONETT / SZONETTJELÖLT
+// 14 sor önmagában NEM elég.
+// Minden sornak 10, 11 vagy 12 szótagosnak kell lennie.
+if (
+  total_lines === 14 &&
+  syllables.length === 14 &&
+  syllables.every(n => n === 10 || n === 11 || n === 12)
+) {
 
-  const acceptedSyllables = syllables.filter(
-    n => n === 10 || n === 11 || n === 12
-  ).length;
-
-  let confidence = 50;
-
-  // Szótagszerkezet
-  if (acceptedSyllables === 14) {
-    confidence += 30;
-  } else if (acceptedSyllables >= 12) {
-    confidence += 25;
-  } else if (acceptedSyllables >= 10) {
-    confidence += 15;
-  } else if (acceptedSyllables >= 8) {
-    confidence += 5;
-  }
+  let confidence = 80;
 
   // Klasszikus 4–4–3–3 strófatagolás
   if (
