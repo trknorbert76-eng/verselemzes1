@@ -1194,6 +1194,7 @@ btn.onclick = () => {
 }
 
 function clearStepStorage() {
+   sessionStorage.removeItem("analysis_form");
   sessionStorage.removeItem("analysis_kind");
   sessionStorage.removeItem("analysis_interpretation");
   sessionStorage.removeItem("analysis_structure");
