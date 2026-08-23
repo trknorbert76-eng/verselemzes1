@@ -916,19 +916,13 @@ A szöveg belsejében felismerhető a szonettkoszorú teljes szerkezete.
 if (autorun) {
   const poem = sessionStorage.getItem("poem");
 
-  if (!poem) {
-    window.location.href = "index.html";
-  } else {
-    // Az Indexből kapott vers bekerül a Forma mezőjébe
+  if (poem) {
     document.getElementById("poemInput").value = poem;
 
-    // Lefut a teljes formai vizsgálat
     runAnalysis();
 
-    // A lánc folytatódik a Felismeréssel
-    setTimeout(() => {
-      window.location.href = "felismeres.html?autorun=1";
-    }, 100);
+    // Jelzés az Indexnek: a formai vizsgálat elkészült
+    window.parent.postMessage("forma_analysis_done", "*");
   }
 }
 </script>
