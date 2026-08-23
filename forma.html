@@ -923,7 +923,7 @@ if (autorun) {
 
     // Jelzés az Indexnek: a formai vizsgálat elkészült
    // A formai vizsgálat elkészült
-sessionStorage.setItem("step_form_done", Date.now().toString());
+window.parent.postMessage("forma_analysis_done", "*");
   }
 }
 </script>
