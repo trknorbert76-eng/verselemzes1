@@ -2172,6 +2172,22 @@ sessionStorage.setItem("analysis_running", "1");
     sessionStorage.setItem("poem", poem);
     sessionStorage.setItem("poemText", poem);
 
+   // FORMAI ELŐELEMZŐ FUTTATÁSA A HÁTTÉRBEN
+await new Promise((resolve) => {
+  const frame = document.getElementById("runnerFrame");
+
+  const onMessage = (event) => {
+    if (event.data === "forma_analysis_done") {
+      window.removeEventListener("message", onMessage);
+      resolve();
+    }
+  };
+
+  window.addEventListener("message", onMessage);
+
+  frame.src = "forma.html?autorun=1";
+});
+
    resetAllStepUi();
 updateCheckStatus();
 updateDepthStatus();
