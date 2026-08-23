@@ -125,6 +125,8 @@
 
 <script>
 
+  const autorun = new URLSearchParams(window.location.search).get("autorun") === "1";
+
 function countSyllables(text) {
   const cleaned = text
     .toLowerCase()
@@ -911,7 +913,24 @@ A szöveg belsejében felismerhető a szonettkoszorú teljes szerkezete.
     chooseBestForm(withData, withoutData, firstLine);
 }
 }
+if (autorun) {
+  const poem = sessionStorage.getItem("poem");
 
+  if (!poem) {
+    window.location.href = "index.html";
+  } else {
+    // Az Indexből kapott vers bekerül a Forma mezőjébe
+    document.getElementById("poemInput").value = poem;
+
+    // Lefut a teljes formai vizsgálat
+    runAnalysis();
+
+    // A lánc folytatódik a Felismeréssel
+    setTimeout(() => {
+      window.location.href = "felismeres.html?autorun=1";
+    }, 100);
+  }
+}
 </script>
 
 </body>
