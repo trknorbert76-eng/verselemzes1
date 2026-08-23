@@ -351,17 +351,55 @@ const savedFormRaw = sessionStorage.getItem("analysis_form");
 if (savedFormRaw) {
   try {
     const savedForm = JSON.parse(savedFormRaw);
+    const likely = savedForm.likelyForm || "";
 
-    formTypeEl.textContent =
-      savedForm.likelyForm || "Nem azonosítható egyértelműen";
+    const lines = likely
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean);
 
-    formReasoningEl.textContent =
-      [
-        savedForm.withFirst,
-        savedForm.withoutFirst
-      ]
-      .filter(Boolean)
-      .join("\n\n");
+    const formLine = lines.find(line =>
+      line.toLowerCase().startsWith("valószínű versforma:")
+    );
+
+    const classificationLine = lines.find(line =>
+      line.toLowerCase().startsWith("valószínű besorolás:")
+    );
+
+    // VERSFORMA
+    if (formLine) {
+      const index = lines.indexOf(formLine);
+      formTypeEl.textContent =
+        lines[index + 1] || "Nem azonosítható egyértelműen";
+    } else if (classificationLine) {
+      const index = lines.indexOf(classificationLine);
+      formTypeEl.textContent =
+        lines[index + 1] || "Nem azonosítható egyértelműen";
+    } else {
+      formTypeEl.textContent = "Nem azonosítható egyértelműen";
+    }
+
+    // RÖVID FORMAFELISMERÉS
+    const confidenceLine = lines.find(line =>
+      line.toLowerCase().startsWith("bizonyosság:")
+    );
+
+    if (confidenceLine) {
+      const index = lines.indexOf(confidenceLine);
+      const confidence = lines[index + 1] || "";
+
+      const lastInfo = lines.find(line =>
+        line.toLowerCase().includes("első sor")
+      );
+
+      formReasoningEl.textContent =
+        [confidence ? `Bizonyosság: ${confidence}` : "", lastInfo || ""]
+          .filter(Boolean)
+          .join(" ");
+    } else {
+      formReasoningEl.textContent =
+        lines[0] || "Nincs biztos kötött forma.";
+    }
 
   } catch (e) {
     console.error("A formaelemzés nem tölthető be:", e);
