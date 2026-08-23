@@ -346,11 +346,33 @@ function fillList(items) {
 
 function renderResult(result) {
   mainTypeEl.textContent = result.main_type || "Nincs megadva";
-  formTypeEl.textContent =
-  result.form_type || "Nem azonosítható egyértelműen";
+const savedFormRaw = sessionStorage.getItem("analysis_form");
 
-formReasoningEl.textContent =
-  result.form_reasoning || "Nincs külön formai indoklás.";
+if (savedFormRaw) {
+  try {
+    const savedForm = JSON.parse(savedFormRaw);
+
+    formTypeEl.textContent =
+      savedForm.likelyForm || "Nem azonosítható egyértelműen";
+
+    formReasoningEl.textContent =
+      [
+        savedForm.withFirst,
+        savedForm.withoutFirst
+      ]
+      .filter(Boolean)
+      .join("\n\n");
+
+  } catch (e) {
+    console.error("A formaelemzés nem tölthető be:", e);
+
+    formTypeEl.textContent = "Nem azonosítható egyértelműen";
+    formReasoningEl.textContent = "A formaelemzés nem tölthető be.";
+  }
+} else {
+  formTypeEl.textContent = "Nem azonosítható egyértelműen";
+  formReasoningEl.textContent = "Nincs mentett formaelemzés.";
+}
   speechModeEl.textContent = result.speech_mode || "Nincs megadva";
   moodEl.textContent = result.mood || "Nincs megadva";
   styleLabelEl.textContent = result.style_label || "Nincs megadva";
