@@ -103,7 +103,8 @@
 
   <textarea id="poemInput" placeholder="Másold ide a verset..."></textarea>
 
-  <button onclick="runAnalysis()">Elemzés</button>
+ <button onclick="runAnalysis()">Elemzés</button>
+<button onclick="window.location.href='felismeres.html'">← Vissza a felismeréshez</button>
 
   <div class="grid">
     <div class="card">
@@ -912,18 +913,52 @@ A szöveg belsejében felismerhető a szonettkoszorú teljes szerkezete.
   document.getElementById("likelyForm").textContent =
     chooseBestForm(withData, withoutData, firstLine);
 }
+// KÉSZ FORMAELEMZÉS ELMENTÉSE
+sessionStorage.setItem("analysis_form", JSON.stringify({
+  poem: text,
+  withFirst: document.getElementById("withFirst").textContent,
+  withoutFirst: document.getElementById("withoutFirst").textContent,
+  likelyForm: document.getElementById("likelyForm").textContent
+}));
+
+  
 }
+const savedPoem = sessionStorage.getItem("poem");
+const savedFormRaw = sessionStorage.getItem("analysis_form");
+
 if (autorun) {
-  const poem = sessionStorage.getItem("poem");
 
-  if (poem) {
-    document.getElementById("poemInput").value = poem;
-
+  // HÁTTÉRFUTÁS: az aktuális verset elemezzük
+  if (savedPoem) {
+    document.getElementById("poemInput").value = savedPoem;
     runAnalysis();
+  }
 
-    // Jelzés az Indexnek: a formai vizsgálat elkészült
-   // A formai vizsgálat elkészült
-window.parent.postMessage("forma_analysis_done", "*");
+  // Jelzés az Indexnek, hogy elkészült
+  window.parent.postMessage("forma_analysis_done", "*");
+
+} else {
+
+  // KÉZI MEGNYITÁS: a már elkészült eredményt mutatjuk
+  if (savedFormRaw) {
+    try {
+      const savedForm = JSON.parse(savedFormRaw);
+
+      document.getElementById("poemInput").value =
+        savedForm.poem || "";
+
+      document.getElementById("withFirst").textContent =
+        savedForm.withFirst || "—";
+
+      document.getElementById("withoutFirst").textContent =
+        savedForm.withoutFirst || "—";
+
+      document.getElementById("likelyForm").textContent =
+        savedForm.likelyForm || "—";
+
+    } catch (e) {
+      console.error("A mentett formaelemzés nem tölthető be:", e);
+    }
   }
 }
 </script>
