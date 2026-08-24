@@ -2270,6 +2270,9 @@ updateDepthStatus();
 updateDepthProgress();
 
     stepsWrap.style.display = "block";
+// ÖSSZEGZÉS  FOLYAMATJELZŐJE MÁR MOST ELINDUL
+startFakeSummaryProgress();
+   
     showOk("A vers elfogadva. A háttérelemzés elindult.");
     appendRunnerInfo("Felismerés indul...");
 
@@ -2461,8 +2464,6 @@ const check = await runStepWithUi(checkStep, () =>
     updateCheckStatus();
 
 appendRunnerInfo("Végső szöveges összegzés készül...");
-
-startFakeSummaryProgress();
 
 await startFinalSummary(poem);
 
