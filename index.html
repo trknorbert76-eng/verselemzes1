@@ -2269,11 +2269,16 @@ updateCheckStatus();
 updateDepthStatus();
 updateDepthProgress();
 
-    stepsWrap.style.display = "block";
-// ÖSSZEGZÉS  FOLYAMATJELZŐJE MÁR MOST ELINDUL
-startFakeSummaryProgress();
-   
-    showOk("A vers elfogadva. A háttérelemzés elindult.");
+stepsWrap.style.display = "block";
+
+// ÖSSZEGZÉS KAMU FOLYAMATJELZŐJE 5 MP KÉSLELTETÉSSEL INDUL
+setTimeout(() => {
+  if (sessionStorage.getItem("analysis_running") === "1") {
+    startFakeSummaryProgress();
+  }
+}, 5000);
+
+showOk("A vers elfogadva. A háttérelemzés elindult.");
     appendRunnerInfo("Felismerés indul...");
 
     // 1. FELISMERÉS — ez marad első, mert erre épül a többi
