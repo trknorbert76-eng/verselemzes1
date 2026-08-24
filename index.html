@@ -862,6 +862,81 @@ function stopFakeInnerProgress() {
   }
 }
 
+ let summaryFakeProgress = 0;
+let summaryFakeTimer = null;
+
+function startFakeSummaryProgress() {
+  stopFakeSummaryProgress();
+
+  const box = document.getElementById("box-summary");
+  const fill = box?.querySelector(".progressFill");
+  const btn = document.getElementById("btn-summary");
+  const note = document.getElementById("note-summary");
+
+  if (!box || !fill || !btn || !note) return;
+
+  summaryFakeProgress = 0;
+
+  btn.disabled = true;
+  btn.textContent = "Összegzés folyamatban";
+  btn.classList.remove("done");
+  btn.classList.add("loading");
+
+  box.classList.remove("done", "real");
+  box.classList.add("loading", "half");
+
+  note.textContent = "A végső összegzés készül...";
+
+  fill.style.transition = "width 1s linear";
+  fill.style.background = "#f4c542";
+  fill.style.width = "0%";
+
+  summaryFakeTimer = setInterval(() => {
+    if (summaryFakeProgress < 95) {
+      summaryFakeProgress += 0.59375;
+
+      if (summaryFakeProgress > 95) {
+        summaryFakeProgress = 95;
+      }
+
+      fill.style.width = summaryFakeProgress + "%";
+    }
+  }, 1000);
+}
+
+function finishFakeSummaryProgress() {
+  stopFakeSummaryProgress();
+
+  const box = document.getElementById("box-summary");
+  const fill = box?.querySelector(".progressFill");
+  const btn = document.getElementById("btn-summary");
+  const note = document.getElementById("note-summary");
+
+  if (!box || !fill || !btn || !note) return;
+
+  summaryFakeProgress = 100;
+
+  box.classList.remove("loading", "half");
+  box.classList.add("done", "real");
+
+  btn.classList.remove("loading");
+  btn.classList.add("done");
+
+  fill.style.transition = "width 0.35s ease";
+  fill.style.width = "100%";
+  fill.style.background = "#4caf50";
+
+  btn.textContent = "Összegzés kész";
+  note.textContent = "Az összegzés elkészült.";
+}
+
+function stopFakeSummaryProgress() {
+  if (summaryFakeTimer) {
+    clearInterval(summaryFakeTimer);
+    summaryFakeTimer = null;
+  }
+}
+
   let interpretationFakeProgress = 0;
 let interpretationFakeTarget = 0;
 let interpretationFakeTimer = null;
@@ -2385,7 +2460,9 @@ const check = await runStepWithUi(checkStep, () =>
     finishFakeCheckProgress();
     updateCheckStatus();
 
-   appendRunnerInfo("Végső szöveges összegzés készül...");
+appendRunnerInfo("Végső szöveges összegzés készül...");
+
+startFakeSummaryProgress();
 
 await startFinalSummary(poem);
 
@@ -2400,7 +2477,9 @@ appendRunnerInfo("Végső szöveges összegzés elkészült.");
 runnerFrame.src = summaryStep.page + "&t=" + Date.now();
 await waitForStep("step_summary_done");
 
-  setStepDone(summaryStep);
+finishFakeSummaryProgress();
+setStepDone(summaryStep);
+
 appendRunnerInfo("Összegzés kész.");
 updateSummaryStatus();
 
