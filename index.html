@@ -2271,12 +2271,7 @@ updateDepthProgress();
 
 stepsWrap.style.display = "block";
 
-// ÖSSZEGZÉS KAMU FOLYAMATJELZŐJE 5 MP KÉSLELTETÉSSEL INDUL
-setTimeout(() => {
-  if (sessionStorage.getItem("analysis_running") === "1") {
-    startFakeSummaryProgress();
-  }
-}, 5000);
+
 
 showOk("A vers elfogadva. A háttérelemzés elindult.");
     appendRunnerInfo("Felismerés indul...");
@@ -2298,6 +2293,9 @@ showOk("A vers elfogadva. A háttérelemzés elindult.");
 
     setStepDone(pipeline[0]);
     appendRunnerInfo("Felismerés kész.");
+
+   // ÖSSZEGZÉS HÁTTÉR-FOLYAMATJELZŐ INDUL
+startFakeSummaryProgress();
 
 // 2. ELŐELLENŐRZÉS — elindul, de nem blokkolja a többi elemzést
 const checkSeedStep = pipeline.find(s => s.key === "checkseed");
@@ -2478,7 +2476,7 @@ appendRunnerInfo("Végső szöveges összegzés elkészült.");
     const summaryStep = pipeline.find(s => s.key === "summary");
 
     appendRunnerInfo("Összegzés indul...");
-    setStepLoading(summaryStep);
+ 
 
 runnerFrame.src = summaryStep.page + "&t=" + Date.now();
 await waitForStep("step_summary_done");
