@@ -1180,7 +1180,7 @@ function setStepDone(step) {
   box.classList.remove("loading");
   box.classList.add("done");
 
-  note.textContent = "Az eredmény elkészült, az oldal megnyitható.";
+  note.textContent = "Az oldal a teljes feldolgozás után nyitható meg.";
 
 btn.onclick = () => {
 
@@ -1362,7 +1362,7 @@ if (percent === 100) {
   btn.classList.add("done");
   box.classList.add("done", "real");
   btn.textContent = "Hatás + mélység kész";
-  note.textContent = "Az eredmény elkészült, az oldal megnyitható.";
+  note.textContent = "Az oldal a teljes feldolgozás után nyitható meg.";
   btn.onclick = () => {
 
   if (!sessionStorage.getItem("step_summary_done")) {
