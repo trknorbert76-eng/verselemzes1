@@ -441,7 +441,7 @@ font-family: "Courier New", monospace;
   Többrétegű költői elemzés.<br>
   A költészetet nem lehet pontosan mérni, hiszen az ízlés,
   az érzelmi hatás és az olvasat minden emberben másként működik.
-  Egy vers technikai kidolgozottsága, ritmusa, képi világa,
+  Egy vers technikai kidolgozottsága, <span id="secretContest">ritmusa</span>, képi világa,
   belső mélysége és összhatása azonban mégis különbségeket teremt.<br>
   Ez a rendszer arra tesz kísérletet, hogy több szempontból
   megvizsgálja a vers belső működését, és az elemzés alapján
@@ -592,6 +592,7 @@ const summaryStatusBtn = document.getElementById("summaryStatusBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
  const introText = document.getElementById("introText");
+ const secretContest = document.getElementById("secretContest");
 
 const userTopBox = document.getElementById("userTopBox");
 
@@ -2143,7 +2144,110 @@ async function runStepWithUi(step, task) {
     throw err;
   }
 }
+let secretContestBusy = false;
 
+secretContest.addEventListener("click", async () => {
+
+  if (secretContestBusy) return;
+
+  const poem = poemInput.value.trim();
+
+  if (!poem) {
+    alert("Illessz be egy verset.");
+    return;
+  }
+
+  const lines = poem
+    .split("\n")
+    .map(x => x.trim())
+    .filter(Boolean);
+
+  if (poem.length < 40) {
+    alert("A vers túl rövid.");
+    return;
+  }
+
+  if (lines.length < 3) {
+    alert("Legalább 3 sor szükséges.");
+    return;
+  }
+
+  secretContestBusy = true;
+
+  try {
+
+    // régi elemzési adatok törlése
+    clearStepStorage();
+
+    // korábbi pályázati eredmény törlése
+    sessionStorage.removeItem("analysis_contest");
+
+    // új vers eltárolása
+    sessionStorage.setItem("poem", poem);
+    sessionStorage.setItem("poemText", poem);
+
+    // új azonosító
+    const analysisId = crypto.randomUUID();
+    sessionStorage.setItem("analysis_id", analysisId);
+
+
+    // 1. CSAK A FORMA FELISMERÉSE
+    await new Promise((resolve) => {
+
+      const frame = document.getElementById("runnerFrame");
+
+      const onMessage = (event) => {
+
+        if (event.data === "forma_analysis_done") {
+
+          window.removeEventListener("message", onMessage);
+          resolve();
+
+        }
+
+      };
+
+      window.addEventListener("message", onMessage);
+
+      frame.src =
+        "forma.html?autorun=1&t=" + Date.now();
+
+    });
+
+
+    // 2. CSAK A VERS TÍPUSÁNAK FELISMERÉSE
+    const kind = await runWorkerStep(
+      "kind",
+      "analysis_kind",
+      "step_kind_done",
+      poem
+    );
+
+    if (kind?.is_poem === false) {
+      alert(kind?.message || "Ez nem tekinthető versnek.");
+      secretContestBusy = false;
+      return;
+    }
+
+
+    // 3. KÉSZ -> PÁLYÁZAT
+    window.location.href = "palyazat.html";
+
+
+  } catch (err) {
+
+    console.error("Pályázati gyorsbelépés hiba:", err);
+
+    alert(
+      err.message ||
+      "A felismerés nem sikerült."
+    );
+
+    secretContestBusy = false;
+
+  }
+
+});
 analyzeBtn.addEventListener("click", async () => {
   const poem = poemInput.value.trim();
 
