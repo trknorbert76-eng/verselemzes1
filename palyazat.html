@@ -259,6 +259,22 @@ select {
   margin-bottom: 8px;
 }
 
+  .podiumTitle.blue {
+  color: #64b5f6;
+}
+
+.podiumTitle.green {
+  color: #81c784;
+}
+
+.podiumTitle.white {
+  color: #f2f2f2;
+}
+
+.podiumTitle.red {
+  color: #ef8f8f;
+}
+
 .podiumScore {
   color: #bbb;
 }
@@ -1098,8 +1114,8 @@ function renderResult(data) {
     const title =
       document.createElement("div");
 
-    title.className =
-      "podiumTitle";
+   title.className =
+  `podiumTitle ${item.color || "white"}`;
 
     title.textContent =
       item.title ||
