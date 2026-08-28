@@ -1263,6 +1263,46 @@ startBtn.addEventListener(
   }
 );
 
+  // ============================================================
+// KORÁBBI PÁLYÁZATI EREDMÉNY VISSZATÖLTÉSE
+// ============================================================
+
+const savedContestRaw =
+  sessionStorage.getItem("analysis_contest");
+
+if (savedContestRaw) {
+
+  try {
+
+    const savedContest =
+      JSON.parse(savedContestRaw);
+
+    renderResult(savedContest);
+
+    markRoundDone(1);
+    markRoundDone(2);
+    markRoundDone(3);
+
+    infoBox.textContent =
+      "A korábbi pályázati felmérés betöltve.";
+
+    infoBox.style.display =
+      "block";
+
+    if (savedContest.target?.title) {
+      titleInput.value =
+        savedContest.target.title;
+    }
+
+  } catch (err) {
+
+    console.error(
+      "A korábbi pályázati eredmény nem tölthető vissza:",
+      err
+    );
+  }
+}
+
 
 // ============================================================
 // VISSZA A RITMUSHOZ
