@@ -710,6 +710,63 @@ function getStoredPoemType() {
   }
 }
 
+  function getStoredSuggestedTitle() {
+
+  const savedFormRaw =
+    sessionStorage.getItem("analysis_form");
+
+  if (!savedFormRaw) {
+    return "";
+  }
+
+  try {
+
+    const savedForm =
+      JSON.parse(savedFormRaw);
+
+    const likely =
+      savedForm.likelyForm || "";
+
+    const lines = likely
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    const titleLine =
+      lines.find(line =>
+        line
+          .toLowerCase()
+          .startsWith("valószínű cím:")
+      );
+
+    if (!titleLine) {
+      return "";
+    }
+
+    const index =
+      lines.indexOf(titleLine);
+
+    let title =
+      lines[index + 1] || "";
+
+    title = title
+      .replace(/^["„”]+/, "")
+      .replace(/["„”]+$/, "")
+      .trim();
+
+    return title;
+
+  } catch (err) {
+
+    console.error(
+      "Cím kiolvasási hiba:",
+      err
+    );
+
+    return "";
+  }
+}
+
 
 const detectedForm =
   getStoredPoemForm();
@@ -717,11 +774,19 @@ const detectedForm =
 const detectedType =
   getStoredPoemType();
 
+const suggestedTitle =
+  getStoredSuggestedTitle();
+  
 formValue.textContent =
   detectedForm;
 
 typeValue.textContent =
   detectedType;
+
+  if (suggestedTitle) {
+  titleInput.value =
+    suggestedTitle;
+}
 
 
 // ============================================================
