@@ -1,0 +1,1218 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pályázat-szimulátor</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Georgia, serif;
+  background: #111;
+  color: #eee;
+}
+
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 30px 20px 60px;
+}
+
+h1 {
+  font-size: 2.1rem;
+  margin-bottom: 10px;
+}
+
+.intro {
+  color: #bbb;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #d6b36a;
+  color: #111;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button:hover {
+  opacity: 0.95;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button.secondary {
+  background: #2b2b2b;
+  color: #eee;
+  border: 1px solid #444;
+}
+
+button.start {
+  background: #d6b36a;
+  color: #111;
+  border: 1px solid #e2c47e;
+}
+
+.loadingBox,
+.errorBox,
+.infoBox {
+  display: none;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.loadingBox {
+  background: #241c0d;
+  border: 1px solid #8a6a1f;
+  color: #f1d98c;
+}
+
+.errorBox {
+  background: #2a1616;
+  border: 1px solid #6a2c2c;
+  color: #f0c7c7;
+}
+
+.infoBox {
+  background: #162417;
+  border: 1px solid #2f6a35;
+  color: #cdeccf;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  color: #d6b36a;
+  font-size: 1.15rem;
+}
+
+.infoRow {
+  margin-bottom: 18px;
+}
+
+.infoRow:last-child {
+  margin-bottom: 0;
+}
+
+.miniTitle {
+  color: #c9b07a;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.valueBox {
+  background: #141414;
+  border: 1px solid #2c2c2c;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #eee;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+input,
+select {
+  width: 100%;
+  box-sizing: border-box;
+  background: #141414;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: Georgia, serif;
+  font-size: 1rem;
+}
+
+.roundsBox {
+  margin-top: 24px;
+}
+
+.roundRow {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.roundLabel {
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #2b2b2b;
+  border: 1px solid #444;
+  color: #ddd;
+  font-weight: bold;
+}
+
+.roundLabel.running {
+  background: #8a5700;
+  border-color: #d58b17;
+  color: #fff2d2;
+}
+
+.roundLabel.done {
+  background: #205d25;
+  border-color: #4caf50;
+  color: #fff;
+}
+
+.progressBox {
+  height: 14px;
+  background: #2d2412;
+  border: 1px solid #8a6a1f;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  width: 0%;
+  height: 100%;
+  background: #d6b36a;
+  transition: width 0.7s linear;
+}
+
+.progressBox.done {
+  background: #19301b;
+  border-color: #2e7d32;
+}
+
+.progressBox.done .progressFill {
+  width: 100% !important;
+  background: #4caf50;
+}
+
+.resultArea {
+  display: none;
+  margin-top: 24px;
+}
+
+.targetStatus {
+  font-size: 1.4rem;
+  margin-bottom: 18px;
+  color: #fff;
+}
+
+.targetStatus.out {
+  color: #e78787;
+}
+
+.targetStatus.final {
+  color: #82d988;
+}
+
+.podiumGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.podiumItem {
+  background: #141414;
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.podiumPlace {
+  color: #d6b36a;
+  font-size: 1.15rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.podiumTitle {
+  color: #fff;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.podiumScore {
+  color: #bbb;
+}
+
+.poemPreview {
+  margin-top: 24px;
+  background: #151515;
+  border: 1px solid #303030;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.poemPreview h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #d6b36a;
+  font-size: 1.05rem;
+}
+
+.poemText {
+  white-space: pre-wrap;
+  color: #ddd;
+  line-height: 1.7;
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .roundRow {
+    grid-template-columns: 1fr;
+  }
+
+  .podiumGrid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <h1>Pályázat-szimulátor</h1>
+
+  <p class="intro">
+    A vers anonim pályázati mezőnybe kerül.
+    A zsűri először rostál, majd szakmai újraolvasást végez,
+    végül az öt döntős között teljes sorrendet állít fel.
+  </p>
+
+  <div class="topbar">
+    <button class="secondary" id="backBtn">
+      ← Vissza a ritmushoz
+    </button>
+
+    <button class="start" id="startBtn">
+      Felmérés indítása
+    </button>
+  </div>
+
+
+  <div class="layout">
+
+    <div class="card">
+
+      <h2>Vizsgált vers</h2>
+
+      <div class="infoRow">
+        <div class="miniTitle">Cím</div>
+        <input
+          type="text"
+          id="titleInput"
+          placeholder="Írd be a vers címét"
+        />
+      </div>
+
+      <div class="infoRow">
+        <div class="miniTitle">Versforma</div>
+        <div class="valueBox" id="formValue">—</div>
+      </div>
+
+      <div class="infoRow">
+        <div class="miniTitle">Fő típus</div>
+        <div class="valueBox" id="typeValue">—</div>
+      </div>
+
+      <div class="infoRow">
+        <div class="miniTitle">Zsűri szigorúsága</div>
+
+        <select id="strictnessSelect">
+          <option value="1">1 – nagyon engedékeny</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5 – reális</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10 – rendkívül szigorú</option>
+        </select>
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>A verseny menete</h2>
+
+      <div class="infoRow">
+        <div class="miniTitle">Mezőny</div>
+        <div class="valueBox">
+          19 referencia-vers + 1 vizsgált vers = 20 vers
+        </div>
+      </div>
+
+      <div class="infoRow">
+        <div class="miniTitle">Első rosta</div>
+        <div class="valueBox">
+          20 versből 10 jut tovább.
+        </div>
+      </div>
+
+      <div class="infoRow">
+        <div class="miniTitle">Szakmai újraolvasás</div>
+        <div class="valueBox">
+          10 versből 5 jut a döntőbe.
+        </div>
+      </div>
+
+      <div class="infoRow">
+        <div class="miniTitle">Döntő</div>
+        <div class="valueBox">
+          Az öt döntős között teljes 1–5. helyezési sorrend készül.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="loadingBox" id="loadingBox">
+    A zsűri dolgozik...
+  </div>
+
+  <div class="errorBox" id="errorBox"></div>
+
+  <div class="infoBox" id="infoBox"></div>
+
+
+  <div class="card roundsBox">
+
+    <h2>Zsűrifordulók</h2>
+
+    <div class="roundRow">
+      <div class="roundLabel" id="round1Label">
+        1. Első rosta
+      </div>
+
+      <div class="progressBox" id="round1Box">
+        <div class="progressFill"></div>
+      </div>
+    </div>
+
+
+    <div class="roundRow">
+      <div class="roundLabel" id="round2Label">
+        2. Szakmai újraolvasás
+      </div>
+
+      <div class="progressBox" id="round2Box">
+        <div class="progressFill"></div>
+      </div>
+    </div>
+
+
+    <div class="roundRow">
+      <div class="roundLabel" id="round3Label">
+        3. Döntő
+      </div>
+
+      <div class="progressBox" id="round3Box">
+        <div class="progressFill"></div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <div class="resultArea" id="resultArea">
+
+    <div class="card">
+
+      <h2>A vizsgált vers eredménye</h2>
+
+      <div
+        class="targetStatus"
+        id="targetStatus"
+      >
+        —
+      </div>
+
+
+      <div class="infoRow">
+        <div class="miniTitle">Pontszám</div>
+        <div class="valueBox" id="targetScore">—</div>
+      </div>
+
+
+      <div class="infoRow">
+        <div class="miniTitle">Versenyeredmény</div>
+        <div class="valueBox" id="targetResult">—</div>
+      </div>
+
+
+      <div class="infoRow">
+        <div class="miniTitle">Zsűri indoklása</div>
+        <div class="valueBox" id="targetReason">—</div>
+      </div>
+
+    </div>
+
+
+    <div class="card" style="margin-top:18px;">
+
+      <h2>Dobogó</h2>
+
+      <div
+        class="podiumGrid"
+        id="podiumGrid"
+      ></div>
+
+    </div>
+
+  </div>
+
+
+  <div class="poemPreview">
+
+    <h2>A vizsgált vers</h2>
+
+    <div
+      class="poemText"
+      id="poemText"
+    ></div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+// ============================================================
+// VERSENY WORKER
+// ============================================================
+
+const CONTEST_WORKER_URL =
+  "https://verseny-zsuri-public.trknorbert76.workers.dev";
+
+
+// ============================================================
+// ELEMEK
+// ============================================================
+
+const backBtn =
+  document.getElementById("backBtn");
+
+const startBtn =
+  document.getElementById("startBtn");
+
+const titleInput =
+  document.getElementById("titleInput");
+
+const formValue =
+  document.getElementById("formValue");
+
+const typeValue =
+  document.getElementById("typeValue");
+
+const strictnessSelect =
+  document.getElementById("strictnessSelect");
+
+const poemText =
+  document.getElementById("poemText");
+
+const loadingBox =
+  document.getElementById("loadingBox");
+
+const errorBox =
+  document.getElementById("errorBox");
+
+const infoBox =
+  document.getElementById("infoBox");
+
+const resultArea =
+  document.getElementById("resultArea");
+
+const targetStatus =
+  document.getElementById("targetStatus");
+
+const targetScore =
+  document.getElementById("targetScore");
+
+const targetResult =
+  document.getElementById("targetResult");
+
+const targetReason =
+  document.getElementById("targetReason");
+
+const podiumGrid =
+  document.getElementById("podiumGrid");
+
+
+// ============================================================
+// VERS
+// ============================================================
+
+const poem =
+  sessionStorage.getItem("poem") ||
+  sessionStorage.getItem("poemText") ||
+  "";
+
+if (!poem) {
+  window.location.href = "index.html";
+}
+
+poemText.textContent = poem;
+
+
+// ============================================================
+// FORMA KIOLVASÁSA
+// ugyanaz a logika, mint a felismeres.html-ben
+// ============================================================
+
+function getStoredPoemForm() {
+
+  const savedFormRaw =
+    sessionStorage.getItem("analysis_form");
+
+  if (!savedFormRaw) {
+    return "Nem azonosítható egyértelműen";
+  }
+
+  try {
+
+    const savedForm =
+      JSON.parse(savedFormRaw);
+
+    const likely =
+      savedForm.likelyForm || "";
+
+    const lines = likely
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    const formLine =
+      lines.find(line =>
+        line.toLowerCase().startsWith(
+          "valószínű versforma:"
+        )
+      );
+
+    const classificationLine =
+      lines.find(line =>
+        line.toLowerCase().startsWith(
+          "valószínű besorolás:"
+        )
+      );
+
+    if (formLine) {
+
+      const index =
+        lines.indexOf(formLine);
+
+      return (
+        lines[index + 1] ||
+        "Nem azonosítható egyértelműen"
+      );
+    }
+
+    if (classificationLine) {
+
+      const index =
+        lines.indexOf(classificationLine);
+
+      return (
+        lines[index + 1] ||
+        "Nem azonosítható egyértelműen"
+      );
+    }
+
+    return "Nem azonosítható egyértelműen";
+
+  } catch (err) {
+
+    console.error(
+      "Forma kiolvasási hiba:",
+      err
+    );
+
+    return "Nem azonosítható egyértelműen";
+  }
+}
+
+
+// ============================================================
+// TÍPUS KIOLVASÁSA
+// ============================================================
+
+function getStoredPoemType() {
+
+  const raw =
+    sessionStorage.getItem("analysis_kind");
+
+  if (!raw) {
+    return "Nem azonosítható egyértelműen";
+  }
+
+  try {
+
+    const parsed =
+      JSON.parse(raw);
+
+    const kind =
+      parsed?.result ||
+      parsed ||
+      {};
+
+    return (
+      kind.main_type ||
+      "Nem azonosítható egyértelműen"
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Típus kiolvasási hiba:",
+      err
+    );
+
+    return "Nem azonosítható egyértelműen";
+  }
+}
+
+
+const detectedForm =
+  getStoredPoemForm();
+
+const detectedType =
+  getStoredPoemType();
+
+formValue.textContent =
+  detectedForm;
+
+typeValue.textContent =
+  detectedType;
+
+
+// ============================================================
+// FOLYAMATJELZŐ
+// ============================================================
+
+let progressTimer = null;
+let fakeElapsed = 0;
+
+
+function resetProgress() {
+
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+
+  fakeElapsed = 0;
+
+  for (let i = 1; i <= 3; i++) {
+
+    const label =
+      document.getElementById(
+        `round${i}Label`
+      );
+
+    const box =
+      document.getElementById(
+        `round${i}Box`
+      );
+
+    const fill =
+      box.querySelector(
+        ".progressFill"
+      );
+
+    label.classList.remove(
+      "running",
+      "done"
+    );
+
+    box.classList.remove("done");
+
+    fill.style.width = "0%";
+  }
+}
+
+
+function markRoundRunning(number) {
+
+  const label =
+    document.getElementById(
+      `round${number}Label`
+    );
+
+  label.classList.add("running");
+}
+
+
+function markRoundDone(number) {
+
+  const label =
+    document.getElementById(
+      `round${number}Label`
+    );
+
+  const box =
+    document.getElementById(
+      `round${number}Box`
+    );
+
+  const fill =
+    box.querySelector(
+      ".progressFill"
+    );
+
+  label.classList.remove("running");
+  label.classList.add("done");
+
+  box.classList.add("done");
+
+  fill.style.width = "100%";
+}
+
+
+function setProgress(number, percent) {
+
+  const box =
+    document.getElementById(
+      `round${number}Box`
+    );
+
+  const fill =
+    box.querySelector(
+      ".progressFill"
+    );
+
+  fill.style.width =
+    percent + "%";
+}
+
+
+function startFakeProgress() {
+
+  resetProgress();
+
+  markRoundRunning(1);
+
+  loadingBox.textContent =
+    "Első rosta: a húszfős mezőny zsűrizése folyamatban...";
+
+  let p1 = 2;
+  let p2 = 0;
+  let p3 = 0;
+
+  setProgress(1, p1);
+
+  progressTimer =
+    setInterval(() => {
+
+      fakeElapsed++;
+
+      /*
+        A Worker három belső API-kört fut,
+        de a böngésző csak a teljes válasz
+        elkészültekor kap eredményt.
+
+        Ezért ez csak vizuális folyamatjelző.
+      */
+
+      if (fakeElapsed <= 25) {
+
+        p1 = Math.min(
+          94,
+          p1 + 3
+        );
+
+        setProgress(1, p1);
+      }
+
+      else if (fakeElapsed === 26) {
+
+        markRoundDone(1);
+        markRoundRunning(2);
+
+        loadingBox.textContent =
+          "Szakmai újraolvasás: a tíz továbbjutó összevetése folyamatban...";
+      }
+
+      else if (fakeElapsed <= 55) {
+
+        p2 = Math.min(
+          94,
+          p2 + 3
+        );
+
+        setProgress(2, p2);
+      }
+
+      else if (fakeElapsed === 56) {
+
+        markRoundDone(2);
+        markRoundRunning(3);
+
+        loadingBox.textContent =
+          "Döntő: az öt finalista rangsorolása folyamatban...";
+      }
+
+      else {
+
+        p3 = Math.min(
+          94,
+          p3 + 1.5
+        );
+
+        setProgress(3, p3);
+      }
+
+    }, 1000);
+}
+
+
+function finishProgress() {
+
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+
+  markRoundDone(1);
+  markRoundDone(2);
+  markRoundDone(3);
+}
+
+
+// ============================================================
+// EREDMÉNY MEGJELENÍTÉSE
+// ============================================================
+
+function renderResult(data) {
+
+  const target =
+    data.target || {};
+
+  resultArea.style.display =
+    "block";
+
+  targetStatus.classList.remove(
+    "out",
+    "final"
+  );
+
+
+  if (target.status === "kiesett") {
+
+    targetStatus.textContent =
+      "A vizsgált vers kiesett.";
+
+    targetStatus.classList.add("out");
+
+    targetResult.textContent =
+      target.eliminated_in ||
+      "Kiesett";
+
+  } else {
+
+    targetStatus.classList.add("final");
+
+    if (target.final_place) {
+
+      if (target.final_place <= 3) {
+        targetStatus.textContent =
+          `${target.final_place}. helyezés`;
+      } else {
+        targetStatus.textContent =
+          `Döntős – ${target.final_place}. hely`;
+      }
+
+      targetResult.textContent =
+        `${target.final_place}. hely a döntőben`;
+
+    } else {
+
+      targetStatus.textContent =
+        "A vizsgált vers döntőbe jutott.";
+
+      targetResult.textContent =
+        "Döntős";
+    }
+  }
+
+
+  if (
+    target.score !== null &&
+    target.score !== undefined
+  ) {
+
+    targetScore.textContent =
+      `${target.score} / 100`;
+
+  } else {
+
+    targetScore.textContent =
+      "Nincs adat";
+  }
+
+
+  targetReason.textContent =
+    target.reason ||
+    "Nincs külön indoklás.";
+
+
+  // ==========================================================
+  // DOBÓGÓ
+  // ==========================================================
+
+  podiumGrid.innerHTML = "";
+
+  const podium =
+    Array.isArray(data.podium)
+      ? [...data.podium]
+      : [];
+
+  podium.sort(
+    (a, b) =>
+      a.place - b.place
+  );
+
+
+  podium.forEach(item => {
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "podiumItem";
+
+
+    const place =
+      document.createElement("div");
+
+    place.className =
+      "podiumPlace";
+
+    place.textContent =
+      `${item.place}. hely`;
+
+
+    const title =
+      document.createElement("div");
+
+    title.className =
+      "podiumTitle";
+
+    title.textContent =
+      item.title ||
+      item.id ||
+      "Cím nélkül";
+
+
+    const score =
+      document.createElement("div");
+
+    score.className =
+      "podiumScore";
+
+    score.textContent =
+      item.score !== undefined
+        ? `${item.score} / 100`
+        : "";
+
+
+    card.appendChild(place);
+    card.appendChild(title);
+    card.appendChild(score);
+
+    podiumGrid.appendChild(card);
+  });
+}
+
+
+// ============================================================
+// FELMÉRÉS INDÍTÁSA
+// ============================================================
+
+startBtn.addEventListener(
+  "click",
+  async () => {
+
+    const title =
+      titleInput.value.trim();
+
+    if (!title) {
+
+      alert(
+        "Írd be előbb a vers címét."
+      );
+
+      titleInput.focus();
+
+      return;
+    }
+
+
+    const strictness =
+      Number(
+        strictnessSelect.value
+      ) || 5;
+
+
+    startBtn.disabled = true;
+
+    resultArea.style.display =
+      "none";
+
+    errorBox.style.display =
+      "none";
+
+    infoBox.style.display =
+      "none";
+
+    loadingBox.style.display =
+      "block";
+
+
+    startFakeProgress();
+
+
+    try {
+
+      const response =
+        await fetch(
+          CONTEST_WORKER_URL,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+              title,
+              poem,
+              form: detectedForm,
+              type: detectedType,
+              strictness
+            })
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
+
+        throw new Error(
+          data.error ||
+          "A pályázat-szimuláció hibával leállt."
+        );
+      }
+
+
+      finishProgress();
+
+      loadingBox.style.display =
+        "none";
+
+
+      infoBox.textContent =
+        "A zsűrizés befejeződött.";
+
+      infoBox.style.display =
+        "block";
+
+
+      renderResult(data);
+
+
+      sessionStorage.setItem(
+        "analysis_contest",
+        JSON.stringify(data)
+      );
+
+
+    } catch (err) {
+
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+
+      loadingBox.style.display =
+        "none";
+
+
+      errorBox.textContent =
+        err.message ||
+        "Ismeretlen hiba történt.";
+
+      errorBox.style.display =
+        "block";
+
+    } finally {
+
+      startBtn.disabled =
+        false;
+    }
+  }
+);
+
+
+// ============================================================
+// VISSZA A RITMUSHOZ
+// ============================================================
+
+backBtn.addEventListener(
+  "click",
+  () => {
+
+    window.location.href =
+      "ritmus.html";
+  }
+);
+
+</script>
+
+</body>
+</html>
