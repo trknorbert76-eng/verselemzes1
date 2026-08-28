@@ -312,6 +312,35 @@ select {
   .podiumGrid {
     grid-template-columns: 1fr;
   }
+
+  #contestTimer {
+  position: fixed;
+  top: 58px;
+  right: 40px;
+  width: 180px;
+  text-align: right;
+
+  font-family: "Courier New", monospace;
+  font-size: 2rem;
+  font-weight: bold;
+
+  color: #fff;
+  opacity: 0.95;
+
+  display: none;
+
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  z-index: 9999;
+}
+
+@media (max-width: 760px) {
+  #contestTimer {
+    top: 12px;
+    right: 12px;
+    width: 120px;
+    font-size: 1.25rem;
+  }
 }
 </style>
 </head>
@@ -321,6 +350,7 @@ select {
 <div class="wrap">
 
   <h1>Pályázat-szimulátor</h1>
+  <div id="contestTimer">03:05,00</div>
 
   <p class="intro">
     A vers anonim pályázati mezőnybe kerül.
@@ -810,7 +840,92 @@ typeValue.textContent =
 // ============================================================
 
 let progressTimer = null;
-let fakeElapsed = 0;
+let countdownTimer = null;
+
+const CONTEST_ESTIMATE_MS = 185000; // 3:05
+
+const contestTimer =
+  document.getElementById("contestTimer");
+
+  function formatContestTime(ms) {
+
+  ms = Math.max(0, ms);
+
+  const totalSeconds =
+    Math.floor(ms / 1000);
+
+  const minutes =
+    String(
+      Math.floor(totalSeconds / 60)
+    ).padStart(2, "0");
+
+  const seconds =
+    String(
+      totalSeconds % 60
+    ).padStart(2, "0");
+
+  const centi =
+    String(
+      Math.floor((ms % 1000) / 10)
+    ).padStart(2, "0");
+
+  return `${minutes}:${seconds},${centi}`;
+}
+
+
+function startContestCountdown() {
+
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+  }
+
+  const startedAt =
+    performance.now();
+
+  contestTimer.style.display =
+    "block";
+
+  contestTimer.textContent =
+    "03:05,00";
+
+  countdownTimer =
+    setInterval(() => {
+
+      const elapsed =
+        performance.now() - startedAt;
+
+      const remaining =
+        Math.max(
+          0,
+          CONTEST_ESTIMATE_MS - elapsed
+        );
+
+      contestTimer.textContent =
+        formatContestTime(remaining);
+
+      if (remaining <= 0) {
+
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+
+        contestTimer.textContent =
+          "00:00,00";
+      }
+
+    }, 100);
+}
+
+
+function finishContestCountdown() {
+
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  contestTimer.textContent =
+    "00:00,00";
+}
 
 
 function resetProgress() {
@@ -909,79 +1024,113 @@ function startFakeProgress() {
 
   resetProgress();
 
+  startContestCountdown();
+
   markRoundRunning(1);
 
   loadingBox.textContent =
     "Első rosta: a húszfős mezőny zsűrizése folyamatban...";
 
-  let p1 = 2;
-  let p2 = 0;
-  let p3 = 0;
+  const startedAt =
+    performance.now();
 
-  setProgress(1, p1);
+  // 57 + 60 + 68 = 185 mp
+  const ROUND1_END = 57000;
+  const ROUND2_END = 117000;
+  const ROUND3_END = 185000;
+
+  let currentRound = 1;
 
   progressTimer =
     setInterval(() => {
 
-      fakeElapsed++;
+      const elapsed =
+        performance.now() - startedAt;
 
-      /*
-        A Worker három belső API-kört fut,
-        de a böngésző csak a teljes válasz
-        elkészültekor kap eredményt.
 
-        Ezért ez csak vizuális folyamatjelző.
-      */
+      // 1. ROSTA — 57 mp
+      if (elapsed < ROUND1_END) {
 
-      if (fakeElapsed <= 25) {
+        const percent =
+          Math.min(
+            94,
+            (elapsed / ROUND1_END) * 94
+          );
 
-        p1 = Math.min(
-          94,
-          p1 + 3
-        );
+        setProgress(1, percent);
 
-        setProgress(1, p1);
+        return;
       }
 
-      else if (fakeElapsed === 26) {
 
-        markRoundDone(1);
-        markRoundRunning(2);
+      // 2. SZAKMAI — 60 mp
+      if (elapsed < ROUND2_END) {
 
-        loadingBox.textContent =
-          "Szakmai újraolvasás: a tíz továbbjutó összevetése folyamatban...";
+        if (currentRound === 1) {
+
+          markRoundDone(1);
+          markRoundRunning(2);
+
+          currentRound = 2;
+
+          loadingBox.textContent =
+            "Szakmai újraolvasás: a tíz továbbjutó összevetése folyamatban...";
+        }
+
+        const roundElapsed =
+          elapsed - ROUND1_END;
+
+        const roundDuration =
+          ROUND2_END - ROUND1_END;
+
+        const percent =
+          Math.min(
+            94,
+            (roundElapsed / roundDuration) * 94
+          );
+
+        setProgress(2, percent);
+
+        return;
       }
 
-      else if (fakeElapsed <= 55) {
 
-        p2 = Math.min(
-          94,
-          p2 + 3
-        );
+      // 3. DÖNTŐ — 68 mp
+      if (elapsed < ROUND3_END) {
 
-        setProgress(2, p2);
+        if (currentRound === 2) {
+
+          markRoundDone(2);
+          markRoundRunning(3);
+
+          currentRound = 3;
+
+          loadingBox.textContent =
+            "Döntő: az öt finalista rangsorolása folyamatban...";
+        }
+
+        const roundElapsed =
+          elapsed - ROUND2_END;
+
+        const roundDuration =
+          ROUND3_END - ROUND2_END;
+
+        const percent =
+          Math.min(
+            94,
+            (roundElapsed / roundDuration) * 94
+          );
+
+        setProgress(3, percent);
+
+        return;
       }
 
-      else if (fakeElapsed === 56) {
 
-        markRoundDone(2);
-        markRoundRunning(3);
+      // 3:05 után vár a valódi eredményre
+      setProgress(3, 94);
 
-        loadingBox.textContent =
-          "Döntő: az öt finalista rangsorolása folyamatban...";
-      }
-
-      else {
-
-        p3 = Math.min(
-          94,
-          p3 + 1.5
-        );
-
-        setProgress(3, p3);
-      }
-
-    }, 1000);
+    }, 250);
 }
 
 
@@ -991,6 +1140,12 @@ function finishProgress() {
     clearInterval(progressTimer);
     progressTimer = null;
   }
+  if (countdownTimer) {
+  clearInterval(countdownTimer);
+  countdownTimer = null;
+}
+
+  finishContestCountdown();
 
   markRoundDone(1);
   markRoundDone(2);
