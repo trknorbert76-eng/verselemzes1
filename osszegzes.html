@@ -387,7 +387,8 @@ summaryEl.textContent = finalAiSummary
   : buildSummary(kind, structure, rhythm, images, expression, finalLevel, check);
 
 
-    levelTextEl.textContent = "Szint: " + finalLevel.label;
+    levelTextEl.textContent =
+  "Szint: " + finalLevel.label + " · " + Math.round(finalScore) + "/100";
     pointerEl.style.left = finalScore + "%";
 
     const strengths = buildStrengths(kind, structure, rhythm, images, expression, check);
