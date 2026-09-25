@@ -271,7 +271,6 @@ button.next {
 
 <script>
 const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
-const POEM_GATE_URL = "https://poem-gate-public.trknorbert76.workers.dev";
 const NEXT_PAGE = "ertelmezes.html";
 const autorun = new URLSearchParams(window.location.search).get("autorun") === "1";
 
@@ -427,9 +426,9 @@ if (savedFormRaw) {
 }
 
 async function runKindAnalysis(forceRefresh = false) {
-  const originalPoem = sessionStorage.getItem("poem");
+  const poem = sessionStorage.getItem("poem");
 
-  if (!originalPoem) {
+  if (!poem) {
     window.location.href = "index.html";
     return;
   }
@@ -439,62 +438,8 @@ async function runKindAnalysis(forceRefresh = false) {
   hideInfo();
   resultLayout.style.display = "none";
 
-  let poem = originalPoem;
-
-  try {
-    showLoading("A szöveg ellenőrzése folyamatban...");
-
-    const gateRes = await fetch(POEM_GATE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        poem: originalPoem
-      })
-    });
-
-    const gateData = await gateRes.json();
-
-    if (!gateRes.ok || !gateData.ok) {
-      throw new Error(
-        gateData.error || "A szövegellenőrző nem adott megfelelő választ."
-      );
-    }
-
-    poem = gateData.clean_poem || originalPoem;
-
-    // A megtisztított változat külön tárolva.
-    sessionStorage.setItem("poem_clean", poem);
-
-    poemText.textContent = poem;
-    poemPreview.style.display = "block";
-
-    if (gateData.status === "trimmed") {
-      showInfo(
-        `⚠ Külső szöveg leválasztva.\n` +
-        `A műnek tekintett rész: ${gateData.start_line}–${gateData.end_line}. sor\n` +
-        `Bizonyosság: ${gateData.confidence}`
-      );
-    } else {
-      showInfo(
-        `✓ Tiszta vers.\n` +
-        `A teljes szöveget műnek tekinti.\n` +
-        `Bizonyosság: ${gateData.confidence}`
-      );
-    }
-
-  } catch (err) {
-    showError(
-      "A szövegellenőrzés sikertelen: " +
-      (err.message || "ismeretlen hiba")
-    );
-
-    hideLoading();
-    return;
-  }
-
-  hideLoading();
+  poemText.textContent = poem;
+  poemPreview.style.display = "block";
 
 if (!forceRefresh) {
   const saved = sessionStorage.getItem("analysis_kind");
