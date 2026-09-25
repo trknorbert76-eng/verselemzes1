@@ -574,6 +574,7 @@ font-family: "Courier New", monospace;
   window.location.href = "belepes.html";
 }
 const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
+ const POEM_GATE_URL = "https://poem-gate-public.trknorbert76.workers.dev";
 const DEPTH_WORKER_URL = "https://melyseg-depth-public.trknorbert76.workers.dev";
 const IMPACT_WORKER_URL = "https://hatas-depth-public.trknorbert76.workers.dev";
 const INTERPRETATION_WORKER_URL = "https://ertelmezes-public.trknorbert76.workers.dev";
@@ -2249,7 +2250,7 @@ secretContest.addEventListener("click", async () => {
 
 });
 analyzeBtn.addEventListener("click", async () => {
-  const poem = poemInput.value.trim();
+  let poem = poemInput.value.trim();
 
  if (poem === "Èva1976") {
 
@@ -2346,6 +2347,38 @@ newPoemBtn.classList.add("secondary");
 
   try {
     clearStepStorage();
+
+       // ===== POEM GATE =====
+    const originalPoem = poem;
+
+    const gateRes = await fetch(POEM_GATE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        poem: originalPoem
+      })
+    });
+
+    const gateData = await gateRes.json();
+
+    if (!gateRes.ok || !gateData.ok) {
+      throw new Error(
+        gateData.error || "A vers szövegének ellenőrzése sikertelen."
+      );
+    }
+
+    poem = (gateData.clean_poem || originalPoem).trim();
+
+    sessionStorage.setItem("poem_original", originalPoem);
+    sessionStorage.setItem("poem_clean", poem);
+    sessionStorage.setItem("poem_gate", JSON.stringify(gateData));
+
+    // A mezőben is már csak a tényleges vers maradjon
+    poemInput.value = poem;
+
+    // ===== POEM GATE VÉGE =====
 
    const analysisId = crypto.randomUUID();
 sessionStorage.setItem("analysis_id", analysisId);
