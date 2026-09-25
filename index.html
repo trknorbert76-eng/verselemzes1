@@ -2151,7 +2151,7 @@ secretContest.addEventListener("click", async () => {
 
   if (secretContestBusy) return;
 
-  const poem = poemInput.value.trim();
+  let poem = poemInput.value.trim();
 
   if (!poem) {
     alert("Illessz be egy verset.");
