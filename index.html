@@ -2641,6 +2641,12 @@ updateSummaryStatus();
 
 const consumeData = await consumeResponse.json();
 
+   console.log("LEVONÁS VÁLASZ:", consumeData);
+console.log(
+  "ANALYSIS ID:",
+  sessionStorage.getItem("analysis_id")
+);
+
 if (!consumeData.ok) {
   throw new Error(consumeData.error || "Nem sikerült levonni az elemzést.");
 }
