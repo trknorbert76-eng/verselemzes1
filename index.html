@@ -2269,11 +2269,74 @@ if (!termsOk) {
   return;
 }
 
-const freeUses = Number(localStorage.getItem("free_uses") || 0);
-const paidUses = Number(localStorage.getItem("paid_uses") || 0);
+// ===== VALÓDI EGYENLEG LEKÉRÉSE A SZERVERRŐL =====
+
+let balanceData;
+
+try {
+
+  const balanceResponse = await fetch(
+    "https://belepes-public.trknorbert76.workers.dev",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "get_balance",
+        email: localStorage.getItem("user_email")
+      })
+    }
+  );
+
+  balanceData = await balanceResponse.json();
+
+  if (!balanceData.ok) {
+    showError(
+      balanceData.error ||
+      "Nem sikerült ellenőrizni az elemzési egyenleget."
+    );
+    return;
+  }
+
+} catch (err) {
+
+  console.error("EGYENLEG LEKÉRÉSI HIBA:", err);
+
+  showError(
+    "Nem sikerült kapcsolódni az egyenleg-ellenőrzőhöz."
+  );
+
+  return;
+}
+
+
+// valódi szerverértékek
+
+const freeUses = Number(balanceData.free_uses || 0);
+const paidUses = Number(balanceData.paid_uses || 0);
+
+
+// localStorage frissítése
+
+localStorage.setItem("free_uses", String(freeUses));
+localStorage.setItem("paid_uses", String(paidUses));
+
+
+// felső kijelzés frissítése
+
+userTopBox.textContent =
+  `${localStorage.getItem("user_email")} | Ingyenes: ${freeUses} | Fizetős: ${paidUses}`;
+
+
+// csak a szerver dönt
 
 if (freeUses <= 0 && paidUses <= 0) {
-  showError("Nincs több elemzésed. Kérlek, vásárolj új elemzést és lépj be újra az email-cimeddel, és a hozzá tartozó kóddal");
+
+  showError(
+    "Nincs több elemzésed. Kérlek, vásárolj új elemzést."
+  );
+
   return;
 }
  
