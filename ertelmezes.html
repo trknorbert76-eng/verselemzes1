@@ -253,6 +253,20 @@ button.next {
     </div>
 
     <div class="card">
+  <h2>Rejtett utalásrendszer</h2>
+
+  <div class="infoRow">
+    <div class="miniTitle">Felismerhető utaláscsoportok</div>
+    <ul class="list" id="hiddenReferences"></ul>
+  </div>
+
+  <div class="infoRow">
+    <div class="miniTitle">Az utalások közös szerepe</div>
+    <div class="valueBox" id="higherOrderPattern">—</div>
+  </div>
+</div>
+
+    <div class="card">
       <h2>Bizonytalanságok / több olvasat</h2>
 
       <div class="infoRow">
@@ -352,6 +366,38 @@ items.forEach(item => {
 });
 }
 
+  function fillHiddenReferences(items) {
+  const el = document.getElementById("hiddenReferences");
+  if (!el) return;
+
+  el.innerHTML = "";
+
+  if (!Array.isArray(items) || !items.length) {
+    const li = document.createElement("li");
+    li.textContent = "Nem azonosítható biztos rejtett utaláscsoport.";
+    el.appendChild(li);
+    return;
+  }
+
+  items.forEach(item => {
+    const li = document.createElement("li");
+
+    const clues = Array.isArray(item.textual_clues)
+      ? item.textual_clues.join(" + ")
+      : "";
+
+    const reference = item.possible_reference || "ismeretlen kapcsolat";
+    const confidence = item.confidence || "—";
+    const func = item.function_in_poem || "";
+
+    li.textContent =
+      `${reference} — jelek: ${clues} — biztosság: ${confidence}` +
+      (func ? ` — szerepe: ${func}` : "");
+
+    el.appendChild(li);
+  });
+}
+
 function showLoading(message) {
   loadingBox.textContent = message;
   loadingBox.style.display = "block";
@@ -403,6 +449,13 @@ function renderResult(result) {
   setText("innerScore", result.inner_authenticity_score);
 
   fillList("keyMotifs", result.image_activation, "Nincs külön megadott képi aktiváció.");
+  fillHiddenReferences(result.hidden_reference_clusters);
+
+setText(
+  "higherOrderPattern",
+  result.higher_order_pattern,
+  "Nem rajzolódik ki külön összefüggő rejtett utalásrendszer."
+);
   fillList("possibleReadings", result.symbolic_emotional_network, "Nincs külön megadott jelentésháló.");
   fillList("uncertainPoints", result.uncertain_but_possible, "Nincs külön bizonytalanság.");
 
