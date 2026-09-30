@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Writory kalibrátor</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: Georgia, serif;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: auto;
+      padding: 30px 20px 60px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      color: #d6b36a;
+    }
+
+    .intro {
+      color: #aaa;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: 1px solid #444;
+      border-radius: 10px;
+      background: #2b2b2b;
+      color: #eee;
+      cursor: pointer;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 16px;
+    }
+
+    .category {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 15px;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid #292929;
+    }
+
+    .category:last-child {
+      border-bottom: none;
+    }
+
+    .category-name {
+      font-size: 1.05rem;
+    }
+
+    .score {
+      min-width: 80px;
+      text-align: right;
+      color: #d6b36a;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .total {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #444;
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .total-score {
+      color: #d6b36a;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .status {
+      background: #141414;
+      border: 1px solid #2c2c2c;
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+    }
+
+    .ok {
+      color: #7edb8a;
+    }
+
+    .missing {
+      color: #ff7b7b;
+    }
+
+    .poem {
+      white-space: pre-wrap;
+      line-height: 1.65;
+      color: #ccc;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .debug {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: Consolas, monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #aaa;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .note {
+      margin-top: 14px;
+      color: #888;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <button onclick="window.location.href='osszegzes.html'">
+    ← Vissza az összegzéshez
+  </button>
+
+  <h1>Writory kalibrátor</h1>
+
+  <div class="intro">
+    A meglévő verselemzés méréseiből képzett Writory-kalibráció.
+  </div>
+
+  <!-- 5 WRITORY KATEGÓRIA -->
+  <div class="card">
+
+    <div class="category">
+      <div class="category-name">Kreativitás és eredetiség</div>
+      <div class="score" id="creativityScore">— /25</div>
+    </div>
+
+    <div class="category">
+      <div class="category-name">Érzelmi mélység és hitelesség</div>
+      <div class="score" id="emotionScore">— /25</div>
+    </div>
+
+    <div class="category">
+      <div class="category-name">Szerkezet és forma</div>
+      <div class="score" id="structureScore">— /20</div>
+    </div>
+
+    <div class="category">
+      <div class="category-name">Nyelv és költői eszközök</div>
+      <div class="score" id="languageScore">— /20</div>
+    </div>
+
+    <div class="category">
+      <div class="category-name">Hatás</div>
+      <div class="score" id="impactScore">— /10</div>
+    </div>
+
+    <div class="total">
+      <span>Összesen</span>
+      <span class="total-score" id="totalScore">— /100</span>
+    </div>
+
+    <div class="note">
+      A pontozás még nincs bekapcsolva. Először a kalibrációhoz
+      szükséges mérési adatokat ellenőrizzük.
+    </div>
+
+  </div>
+
+
+  <!-- ADATOK ELÉRHETŐSÉGE -->
+  <div class="card">
+    <h2>Elérhető mérési adatok</h2>
+    <div class="status-grid" id="statusGrid"></div>
+  </div>
+
+
+  <!-- AKTUÁLIS VERS -->
+  <div class="card">
+    <h2>Aktuális vers</h2>
+    <div class="poem" id="poemText">—</div>
+  </div>
+
+
+  <!-- IDEIGLENES NYERS ADAT -->
+  <div class="card">
+    <h2>Nyers mérési csomag</h2>
+
+    <div class="note">
+      Ez csak a kalibráció építése alatt kell. Itt látjuk pontosan,
+      milyen adatokat ad át a meglévő elemző.
+    </div>
+
+    <div class="debug" id="debugOutput"></div>
+  </div>
+
+</div>
+
+
+<script>
+
+function safeParse(value) {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+
+function readStorage(key) {
+  return safeParse(sessionStorage.getItem(key));
+}
+
+
+const poem = sessionStorage.getItem("poem") || "";
+
+const data = {
+  kind: readStorage("analysis_kind"),
+  structure: readStorage("analysis_structure"),
+  rhythm: readStorage("analysis_rhythm"),
+  images: readStorage("analysis_images"),
+  expression: readStorage("analysis_expression"),
+  check_seed: readStorage("analysis_check_seed"),
+  interpretation: readStorage("analysis_interpretation"),
+  inner: readStorage("analysis_inner_measure"),
+  depth: readStorage("analysis_depth"),
+  impact: readStorage("analysis_impact"),
+  check: readStorage("analysis_check"),
+  wolker: readStorage("analysis_wolker")
+};
+
+
+// -------------------------
+// AKTUÁLIS VERS
+// -------------------------
+
+document.getElementById("poemText").textContent =
+  poem || "Nem található vers a sessionStorage-ban.";
+
+
+// -------------------------
+// MÉRÉSI CSOMAGOK ÁLLAPOTA
+// -------------------------
+
+const labels = {
+  kind: "Alaptípus / stílus",
+  structure: "Szerkezet",
+  rhythm: "Ritmus",
+  images: "Képiség",
+  expression: "Kifejezésmód",
+  check_seed: "Első ellenőrzés",
+  interpretation: "Értelmezés",
+  inner: "Belső mérés",
+  depth: "Mélység",
+  impact: "Hatásmérés",
+  check: "Végső ellenőrzés",
+  wolker: "Szövegkarakter"
+};
+
+
+const statusGrid = document.getElementById("statusGrid");
+
+Object.entries(data).forEach(([key, value]) => {
+
+  const div = document.createElement("div");
+
+  div.className = "status " + (value ? "ok" : "missing");
+
+  div.textContent =
+    (value ? "✓ " : "✕ ") +
+    labels[key];
+
+  statusGrid.appendChild(div);
+});
+
+
+// -------------------------
+// NYERS ADATOK MEGJELENÍTÉSE
+// -------------------------
+
+const debugData = {
+  poem: poem,
+  measurements: data
+};
+
+document.getElementById("debugOutput").textContent =
+  JSON.stringify(debugData, null, 2);
+
+
+// ----------------------------------------------------
+// WRITORY KALIBRÁCIÓ
+// ----------------------------------------------------
+//
+// IDE kerül majd a 10 valódi Writory-eredmény alapján
+// elkészített kalibráció.
+//
+// Fontos:
+// nem adunk most mesterséges pontokat.
+// Előbb megnézzük a 10 vers tényleges mérési adatait.
+//
+// ----------------------------------------------------
+
+</script>
+
+</body>
+</html>
