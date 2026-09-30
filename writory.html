@@ -199,7 +199,25 @@
     </div>
 
   </div>
+<!-- KALIBRÁCIÓS ADATGYŰJTÉS -->
+<div class="card">
+  <h2>Kalibrációs adatgyűjtés</h2>
 
+  <div id="calibrationStatus" class="note">
+    Vers azonosítása...
+  </div>
+
+  <button
+    id="saveCalibrationBtn"
+    type="button"
+    onclick="saveCalibrationSample()"
+    style="margin-top:16px; margin-bottom:0;"
+  >
+    Aktuális mérés mentése
+  </button>
+
+  <div id="savedCount" class="note"></div>
+</div>
 
   <!-- ADATOK ELÉRHETŐSÉGE -->
   <div class="card">
@@ -335,7 +353,284 @@ document.getElementById("debugOutput").textContent =
 // Előbb megnézzük a 10 vers tényleges mérési adatait.
 //
 // ----------------------------------------------------
+// ====================================================
+// 10 VALÓDI WRITORY ETALON
+// ====================================================
 
+const WRITORY_REFERENCE = [
+  {
+    title: "Kik voltak",
+    creativity: 17,
+    emotion: 17,
+    structure: 14,
+    language: 13,
+    impact: 10,
+    total: 71
+  },
+  {
+    title: "Most legyél",
+    creativity: 15,
+    emotion: 16,
+    structure: 14,
+    language: 14,
+    impact: 10,
+    total: 69
+  },
+  {
+    title: "Küzdelem",
+    creativity: 15,
+    emotion: 16,
+    structure: 14,
+    language: 13,
+    impact: 10,
+    total: 68
+  },
+  {
+    title: "Látomás",
+    creativity: 18,
+    emotion: 15,
+    structure: 15,
+    language: 14,
+    impact: 10,
+    total: 72
+  },
+  {
+    title: "A kalapos ember",
+    creativity: 22,
+    emotion: 21,
+    structure: 18,
+    language: 18,
+    impact: 10,
+    total: 89
+  },
+  {
+    title: "A vonaton",
+    creativity: 22,
+    emotion: 22,
+    structure: 19,
+    language: 18,
+    impact: 10,
+    total: 91
+  },
+  {
+    title: "Szép vers",
+    creativity: 17,
+    emotion: 18,
+    structure: 15,
+    language: 14,
+    impact: 10,
+    total: 74
+  },
+  {
+    title: "Lélegzem",
+    creativity: 18,
+    emotion: 16,
+    structure: 15,
+    language: 15,
+    impact: 10,
+    total: 74
+  },
+  {
+    title: "Táncok a félelemmel",
+    creativity: 17,
+    emotion: 17,
+    structure: 15,
+    language: 14,
+    impact: 10,
+    total: 73
+  },
+  {
+    title: "Gondolatok",
+    creativity: 16,
+    emotion: 16,
+    structure: 13,
+    language: 14,
+    impact: 10,
+    total: 69
+  }
+];
+
+
+// Címet kiszedjük a vers első sorából.
+// Kezeli pl. ezt is: **Megmaradni**
+function cleanTitle(text) {
+  const firstLine = String(text || "")
+    .split("\n")
+    .map(x => x.trim())
+    .find(Boolean) || "";
+
+  return firstLine
+    .replace(/\*\*/g, "")
+    .replace(/^#+\s*/, "")
+    .trim();
+}
+
+
+function normalizeTitle(text) {
+  return String(text || "")
+    .toLocaleLowerCase("hu-HU")
+    .replace(/[„”"']/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+function findReference() {
+  const currentTitle = cleanTitle(poem);
+  const normalized = normalizeTitle(currentTitle);
+
+  return WRITORY_REFERENCE.find(
+    item => normalizeTitle(item.title) === normalized
+  ) || null;
+}
+
+
+// ====================================================
+// TARTÓS KALIBRÁCIÓS TÁROLÓ
+// localStorage, hogy az Új vers ne törölje ki
+// ====================================================
+
+function getCalibrationSamples() {
+  try {
+    return JSON.parse(
+      localStorage.getItem("writory_calibration_samples") || "[]"
+    );
+  } catch {
+    return [];
+  }
+}
+
+
+function setCalibrationSamples(samples) {
+  localStorage.setItem(
+    "writory_calibration_samples",
+    JSON.stringify(samples)
+  );
+}
+
+
+// ====================================================
+// MENTÉS
+// ====================================================
+
+function saveCalibrationSample() {
+
+  const reference = findReference();
+  const status = document.getElementById("calibrationStatus");
+
+  if (!reference) {
+    status.textContent =
+      "Ez a vers nincs a 10 Writory-etalon között, ezért nem menthető tanítóadatként.";
+    status.style.color = "#ff7b7b";
+    return;
+  }
+
+  const sample = {
+    title: reference.title,
+
+    writory: {
+      creativity: reference.creativity,
+      emotion: reference.emotion,
+      structure: reference.structure,
+      language: reference.language,
+      impact: reference.impact,
+      total: reference.total
+    },
+
+    poem: poem,
+
+    measurements: data,
+
+    saved_at: new Date().toISOString()
+  };
+
+
+  let samples = getCalibrationSamples();
+
+  // Ha ugyanazt a verset újra mentjük,
+  // lecseréljük a korábbi mérését.
+  samples = samples.filter(
+    x => normalizeTitle(x.title) !== normalizeTitle(reference.title)
+  );
+
+  samples.push(sample);
+
+  setCalibrationSamples(samples);
+
+  status.textContent =
+    "✓ " + reference.title +
+    " mérési adatai elmentve a Writory-kalibrációhoz.";
+
+  status.style.color = "#7edb8a";
+
+  updateCalibrationStatus();
+}
+
+
+// ====================================================
+// ÁLLAPOT
+// ====================================================
+
+function updateCalibrationStatus() {
+
+  const reference = findReference();
+  const status = document.getElementById("calibrationStatus");
+  const count = document.getElementById("savedCount");
+  const button = document.getElementById("saveCalibrationBtn");
+
+  const samples = getCalibrationSamples();
+
+  count.textContent =
+    "Elmentett etalonversek: " +
+    samples.length +
+    " / " +
+    WRITORY_REFERENCE.length;
+
+
+  if (!reference) {
+
+    const currentTitle = cleanTitle(poem);
+
+    status.textContent =
+      "Aktuális vers: " +
+      (currentTitle || "ismeretlen") +
+      " — ez nem kalibrációs etalon.";
+
+    status.style.color = "#aaa";
+
+    button.disabled = true;
+    button.style.opacity = "0.45";
+
+    return;
+  }
+
+
+  const alreadySaved = samples.some(
+    x => normalizeTitle(x.title) === normalizeTitle(reference.title)
+  );
+
+
+  status.innerHTML =
+    "<strong>" + reference.title + "</strong>" +
+    "<br>Valódi Writory: " +
+    reference.creativity + "/25 · " +
+    reference.emotion + "/25 · " +
+    reference.structure + "/20 · " +
+    reference.language + "/20 · " +
+    reference.impact + "/10" +
+    " = <strong>" + reference.total + "/100</strong>" +
+    (alreadySaved
+      ? "<br><span style='color:#7edb8a'>✓ Ehhez a vershez már van elmentett mérés.</span>"
+      : "");
+
+  status.style.color = "#ddd";
+
+  button.disabled = false;
+  button.style.opacity = "1";
+}
+
+
+updateCalibrationStatus();
 </script>
 
 </body>
