@@ -236,7 +236,21 @@
   <div id="saveMessage" class="note"></div>
   <div id="savedCount" class="note"></div>
 </div>
+<div class="card">
+  <h2>Kalibráció exportálása</h2>
 
+  <div class="note">
+    A 10 elmentett etalonvers teljes mérési ujjlenyomatának mentése.
+  </div>
+
+  <button
+    type="button"
+    onclick="downloadCalibrationData()"
+    style="margin-top:16px; margin-bottom:0;"
+  >
+    Kalibrációs JSON letöltése
+  </button>
+</div>
   <!-- ADATOK ELÉRHETŐSÉGE -->
   <div class="card">
     <h2>Elérhető mérési adatok</h2>
@@ -544,6 +558,32 @@ function updateSavedCount() {
 }
 
 updateSavedCount();
+  function downloadCalibrationData() {
+
+  const samples = getCalibrationSamples();
+
+  if (samples.length === 0) {
+    alert("Nincs elmentett kalibrációs adat.");
+    return;
+  }
+
+  const blob = new Blob(
+    [JSON.stringify(samples, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "writory-kalibracio-10-vers.json";
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
 </script>
 
 </body>
