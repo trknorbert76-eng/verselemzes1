@@ -558,6 +558,222 @@ function updateSavedCount() {
 }
 
 updateSavedCount();
+
+// ====================================================
+// KREATIVITÁS – UJJLENYOMATOS KALIBRÁCIÓ
+// ====================================================
+
+function getCreativityFingerprint(measurements) {
+  if (!measurements) return null;
+
+  const images = measurements.images || {};
+  const expression = measurements.expression || {};
+  const inner = measurements.inner || {};
+
+  return {
+    imageOriginality:
+      images.originality ?? null,
+
+    voiceOriginality:
+      expression.originality_of_voice ?? null,
+
+    independentPoeticLife:
+      inner.independent_poetic_life?.score ?? null,
+
+    concretePower:
+      inner.concrete_power?.score ?? null,
+
+    compression:
+      inner.compression?.score ?? null,
+
+    emptyDepthRisk:
+      inner.empty_depth_risk?.score ?? null
+  };
+}
+
+
+// ----------------------------------------------------
+// SZÖVEGES MEZŐ EGYEZÉSE
+// ----------------------------------------------------
+
+function textSimilarity(a, b) {
+  if (!a || !b) return 0;
+
+  const x = String(a).trim().toLocaleLowerCase("hu-HU");
+  const y = String(b).trim().toLocaleLowerCase("hu-HU");
+
+  return x === y ? 1 : 0;
+}
+
+
+// ----------------------------------------------------
+// 1–10-ES MÉRŐK HASONLÓSÁGA
+//
+// 0 eltérés  = 100%
+// 1 eltérés  = 90%
+// 2 eltérés  = 70%
+// 3 eltérés  = 50%
+// 4 eltérés  = 30%
+// 5+         = 0%
+//
+// Így a ±1 valóban nagyon közeli eredmény.
+// ----------------------------------------------------
+
+function numericSimilarity(a, b) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+
+  const diff = Math.abs(a - b);
+
+  if (diff === 0) return 1.00;
+  if (diff === 1) return 0.90;
+  if (diff === 2) return 0.70;
+  if (diff === 3) return 0.50;
+  if (diff === 4) return 0.30;
+
+  return 0;
+}
+
+
+// ----------------------------------------------------
+// KÉT KREATIVITÁSI UJJLENYOMAT ÖSSZEHASONLÍTÁSA
+// ----------------------------------------------------
+
+function creativitySimilarity(a, b) {
+  if (!a || !b) return 0;
+
+  const parts = [
+    textSimilarity(a.imageOriginality, b.imageOriginality),
+    textSimilarity(a.voiceOriginality, b.voiceOriginality),
+
+    numericSimilarity(
+      a.independentPoeticLife,
+      b.independentPoeticLife
+    ),
+
+    numericSimilarity(
+      a.concretePower,
+      b.concretePower
+    ),
+
+    numericSimilarity(
+      a.compression,
+      b.compression
+    ),
+
+    numericSimilarity(
+      a.emptyDepthRisk,
+      b.emptyDepthRisk
+    )
+  ];
+
+  const average =
+    parts.reduce((sum, value) => sum + value, 0) /
+    parts.length;
+
+  return average * 100;
+}
+
+
+// ----------------------------------------------------
+// AKTUÁLIS VERS KREATIVITÁSÁNAK KERESÉSE
+// ----------------------------------------------------
+
+function calculateCreativityScore() {
+
+  const currentFingerprint =
+    getCreativityFingerprint(data);
+
+  const samples = getCalibrationSamples();
+
+  if (!currentFingerprint || samples.length === 0) {
+    return null;
+  }
+
+  const matches = samples
+    .map(sample => {
+
+      const fingerprint =
+        getCreativityFingerprint(sample.measurements);
+
+      const similarity =
+        creativitySimilarity(
+          currentFingerprint,
+          fingerprint
+        );
+
+      return {
+        title: sample.title,
+        similarity: similarity,
+        score: sample.writory.creativity
+      };
+    })
+    .sort((a, b) => b.similarity - a.similarity);
+
+
+  const best = matches[0];
+
+  if (!best) return null;
+
+
+  // 80% alatt még nem adunk Writory-pontot.
+  if (best.similarity < 80) {
+    return {
+      score: null,
+      best: best,
+      matches: matches
+    };
+  }
+
+
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
+
+
+// ----------------------------------------------------
+// KREATIVITÁS KIÍRÁSA
+// ----------------------------------------------------
+
+const creativityResult =
+  calculateCreativityScore();
+
+if (creativityResult) {
+
+  const scoreBox =
+    document.getElementById("creativityScore");
+
+  if (creativityResult.score !== null) {
+
+    scoreBox.textContent =
+      creativityResult.score + " /25";
+
+  } else {
+
+    scoreBox.textContent = "— /25";
+  }
+
+
+  // Egyelőre a konzolba kiírjuk mind a 10 találatot,
+  // hogy ellenőrizni tudjuk a rendszert.
+
+  console.table(
+    creativityResult.matches.map(item => ({
+      vers: item.title,
+      egyezes:
+        item.similarity.toFixed(1) + "%",
+      writory_kreativitas:
+        item.score
+    }))
+  );
+
+  console.log(
+    "Legjobb kreativitási egyezés:",
+    creativityResult.best
+  );
+}
   function downloadCalibrationData() {
 
   const samples = getCalibrationSamples();
