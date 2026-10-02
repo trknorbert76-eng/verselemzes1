@@ -673,9 +673,20 @@ numericSimilarity(
   a.necessity,
   b.necessity
 ),
+
     numericSimilarity(
-  a.compression,
-  b.compression
+  a.textualSupport,
+  b.textualSupport
+),
+
+numericSimilarity(
+  a.coherence,
+  b.coherence
+),
+
+numericSimilarity(
+  a.resistanceToOverreading,
+  b.resistanceToOverreading
 )
   
   ];
@@ -800,40 +811,48 @@ function getEmotionFingerprint(measurements) {
   const inner = measurements.inner || {};
   const impact = measurements.impact || {};
 
-  return {
+ return {
 
-    // Belső érzelmi hitelesség
-    innerAuthenticity:
-      interpretation.inner_authenticity_score ?? null,
+  // Belső érzelmi hitelesség
+  innerAuthenticity:
+    interpretation.inner_authenticity_score ?? null,
 
-    // A mélyebb/érzelmi olvasat szöveges alátámasztottsága
-    textualSupport:
-      inner.textual_support?.score ?? null,
+  // A mélyebb/érzelmi olvasat szöveges alátámasztottsága
+  textualSupport:
+    inner.textual_support?.score ?? null,
 
-    // A képek, motívumok szükségszerűsége
-    necessity:
-      inner.necessity?.score ?? null,
+  // A képek, motívumok szükségszerűsége
+  necessity:
+    inner.necessity?.score ?? null,
 
-    // Belső összetartás
-    coherence:
-      inner.coherence?.score ?? null,
+  // Belső összetartás
+  coherence:
+    inner.coherence?.score ?? null,
 
-    // Ellenállás a belemagyarázásnak
-    resistanceToOverreading:
-      inner.resistance_to_overreading?.score ?? null,
+  // Ellenállás a belemagyarázásnak
+  resistanceToOverreading:
+    inner.resistance_to_overreading?.score ?? null,
 
-    // Valódi mélység / álmélység elleni kontroll
-    emptyDepthRisk:
-      inner.empty_depth_risk?.score ?? null,
+  // Konkrét költői erő / nyelvi zeneiség
+  concretePower:
+    inner.concrete_power?.score ?? null,
 
-    // Önálló költői működés
-    independentPoeticLife:
-      inner.independent_poetic_life?.score ?? null,
+  // Valódi mélység / álmélység elleni kontroll
+  emptyDepthRisk:
+    inner.empty_depth_risk?.score ?? null,
 
-    // Saját elemző teljes hatásmérése (0–100)
-    impactScore:
-      impact.impact_score ?? null
-  };
+  // Sűrítés / csend / kimondatlanság
+  compression:
+    inner.compression?.score ?? null,
+
+  // Önálló költői működés
+  independentPoeticLife:
+    inner.independent_poetic_life?.score ?? null,
+
+  // Saját elemző teljes hatásmérése (0–100)
+  impactScore:
+    impact.impact_score ?? null
+};
 }
 
 
@@ -877,47 +896,58 @@ function emotionSimilarity(a, b) {
 
     // A tizedes hitelességi értéket
     // 1–10-es mérésként hasonlítjuk
-    numericSimilarity(
-      Math.round(a.innerAuthenticity),
-      Math.round(b.innerAuthenticity)
-    ),
+ const parts = [
+  numericSimilarity(
+    Math.round(a.innerAuthenticity),
+    Math.round(b.innerAuthenticity)
+  ),
 
-    numericSimilarity(
-      a.textualSupport,
-      b.textualSupport
-    ),
+  numericSimilarity(
+    a.textualSupport,
+    b.textualSupport
+  ),
 
-    numericSimilarity(
-      a.necessity,
-      b.necessity
-    ),
+  numericSimilarity(
+    a.necessity,
+    b.necessity
+  ),
 
-    numericSimilarity(
-      a.coherence,
-      b.coherence
-    ),
+  numericSimilarity(
+    a.coherence,
+    b.coherence
+  ),
 
-    numericSimilarity(
-      a.resistanceToOverreading,
-      b.resistanceToOverreading
-    ),
+  numericSimilarity(
+    a.resistanceToOverreading,
+    b.resistanceToOverreading
+  ),
 
-    numericSimilarity(
-      a.emptyDepthRisk,
-      b.emptyDepthRisk
-    ),
+  numericSimilarity(
+    a.concretePower,
+    b.concretePower
+  ),
 
-    numericSimilarity(
-      a.independentPoeticLife,
-      b.independentPoeticLife
-    ),
+  numericSimilarity(
+    a.emptyDepthRisk,
+    b.emptyDepthRisk
+  ),
 
-    // 0–100-as Hatás
-    impactSimilarity(
-      a.impactScore,
-      b.impactScore
-    )
-  ];
+  numericSimilarity(
+    a.compression,
+    b.compression
+  ),
+
+  numericSimilarity(
+    a.independentPoeticLife,
+    b.independentPoeticLife
+  ),
+
+  // 0–100-as Hatás
+  impactSimilarity(
+    a.impactScore,
+    b.impactScore
+  )
+];
 
   const average =
     parts.reduce((sum, value) => sum + value, 0) /
