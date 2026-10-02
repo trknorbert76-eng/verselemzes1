@@ -723,7 +723,89 @@ function numericSimilarity(a, b) {
 
   return 0;
 }
+// ====================================================
+// STABIL JS-UJJLENYOMAT HASONLÓSÁG + BÓNUSZ TESZT
+// ====================================================
 
+function jsFingerprintSimilarity(a, b) {
+  if (!a || !b) return 0;
+
+  const keys = [
+    "lineProfile",
+    "wordProfile",
+    "punctuationProfile",
+    "repetitionProfile",
+    "characterProfile"
+  ];
+
+  let total = 0;
+
+  for (const key of keys) {
+    const x = a[key];
+    const y = b[key];
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+
+    const diff = Math.abs(x - y);
+
+    // 0 eltérés = 100%
+    // 100 eltérés = 0%
+    total += Math.max(0, 1 - diff / 100);
+  }
+
+  return (total / keys.length) * 100;
+}
+
+
+function jsFingerprintBonus(similarity) {
+
+  // TELJES ÖNAZONOSSÁG
+  if (similarity === 100) return 8;
+
+  // Nagyon közeli szerkezeti/stilisztikai rokon
+  if (similarity >= 90) return 5;
+
+  if (similarity >= 80) return 3;
+
+  if (similarity >= 70) return 2;
+
+  if (similarity >= 60) return 1;
+
+  return 0;
+}
+
+
+// ====================================================
+// TESZT – még NEM szól bele a Writory pontozásba
+// ====================================================
+
+function testStableFingerprint() {
+
+  const samples = getCalibrationSamples();
+
+  const results = samples.map(sample => {
+
+    const similarity = jsFingerprintSimilarity(
+      stablePoemFingerprint,
+      sample.jsFingerprint
+    );
+
+    return {
+      vers: sample.title,
+      js_egyezes: similarity.toFixed(1) + "%",
+      bonusz: "+" + jsFingerprintBonus(similarity) + "%"
+    };
+  });
+
+  results.sort((a, b) =>
+    parseFloat(b.js_egyezes) - parseFloat(a.js_egyezes)
+  );
+
+  console.log("STABIL JS-UJJLENYOMAT TESZT:");
+  console.table(results);
+}
+
+testStableFingerprint();
 
 // ----------------------------------------------------
 // KÉT KREATIVITÁSI UJJLENYOMAT ÖSSZEHASONLÍTÁSA
