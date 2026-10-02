@@ -875,11 +875,30 @@ function calculateCreativityScore() {
       const fingerprint =
         getCreativityFingerprint(sample.measurements);
 
-      const similarity =
-        creativitySimilarity(
-          currentFingerprint,
-          fingerprint
-        );
+    let similarity =
+  creativitySimilarity(
+    currentFingerprint,
+    fingerprint
+  );
+
+// Stabil JS-ujjlenyomat korrekció
+const jsSimilarity =
+  jsFingerprintSimilarity(
+    stablePoemFingerprint,
+    sample.jsFingerprint
+  );
+
+// Ha pontosan ugyanaz az etalonvers:
+// biztos önazonosítás.
+if (jsSimilarity === 100) {
+  similarity = 100;
+} else {
+  // Idegen versnél csak kis korrekció.
+  similarity = Math.min(
+    100,
+    similarity + jsFingerprintBonus(jsSimilarity)
+  );
+}
 
       return {
         title: sample.title,
@@ -1134,11 +1153,30 @@ function calculateEmotionScore() {
       const fingerprint =
         getEmotionFingerprint(sample.measurements);
 
-      const similarity =
-        emotionSimilarity(
-          currentFingerprint,
-          fingerprint
-        );
+      let similarity =
+  emotionSimilarity(
+    currentFingerprint,
+    fingerprint
+  );
+
+// Stabil JS-ujjlenyomat korrekció
+const jsSimilarity =
+  jsFingerprintSimilarity(
+    stablePoemFingerprint,
+    sample.jsFingerprint
+  );
+
+// Ha pontosan ugyanaz az etalonvers:
+// biztos önazonosítás.
+if (jsSimilarity === 100) {
+  similarity = 100;
+} else {
+  // Idegen versnél csak kis korrekció.
+  similarity = Math.min(
+    100,
+    similarity + jsFingerprintBonus(jsSimilarity)
+  );
+}
 
       return {
         title: sample.title,
