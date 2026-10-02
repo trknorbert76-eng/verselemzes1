@@ -822,6 +822,165 @@ function getEmotionFingerprint(measurements) {
   };
 }
 
+ // ====================================================
+// KÉT ÉRZELMI UJJLENYOMAT ÖSSZEHASONLÍTÁSA
+// ====================================================
+
+function emotionSimilarity(a, b) {
+  if (!a || !b) return 0;
+
+  const parts = [
+    // Belső hitelesség – ez tizedes érték is lehet
+    Math.max(
+      0,
+      1 - Math.abs(a.innerAuthenticity - b.innerAuthenticity) / 3
+    ),
+
+    // Van-e valódi belső mozgás?
+    a.innerMovement === b.innerMovement ? 1 : 0,
+
+    // Mélységi felismerés
+    textSimilarity(
+      a.depthRecognition,
+      b.depthRecognition
+    ),
+
+    // Több-e egyszerű kijelentésnél?
+    textSimilarity(
+      a.beyondStatement,
+      b.beyondStatement
+    ),
+
+    // Van-e belső feszültség?
+    textSimilarity(
+      a.innerTension,
+      b.innerTension
+    ),
+
+    // Érzelmi erőterek száma
+    numericSimilarity(
+      a.emotionalForceFields,
+      b.emotionalForceFields
+    ),
+
+    // Rejtett feszültségek száma
+    numericSimilarity(
+      a.hiddenTensions,
+      b.hiddenTensions
+    )
+  ];
+
+  const validParts =
+    parts.filter(Number.isFinite);
+
+  if (validParts.length === 0) return 0;
+
+  const average =
+    validParts.reduce((sum, value) => sum + value, 0) /
+    validParts.length;
+
+  return average * 100;
+} 
+
+ // ====================================================
+// AKTUÁLIS VERS ÉRZELMI PONTJÁNAK KERESÉSE
+// ====================================================
+
+function calculateEmotionScore() {
+
+  const currentFingerprint =
+    getEmotionFingerprint(data);
+
+  const samples = getCalibrationSamples();
+
+  if (!currentFingerprint || samples.length === 0) {
+    return null;
+  }
+
+  const matches = samples
+    .map(sample => {
+
+      const fingerprint =
+        getEmotionFingerprint(sample.measurements);
+
+      const similarity =
+        emotionSimilarity(
+          currentFingerprint,
+          fingerprint
+        );
+
+      return {
+        title: sample.title,
+        similarity: similarity,
+        score: sample.writory.emotion
+      };
+    })
+    .sort((a, b) => b.similarity - a.similarity);
+
+
+  const best = matches[0];
+
+  if (!best) return null;
+
+
+  // Ugyanaz a biztonsági küszöb, mint a kreativitásnál.
+  if (best.similarity < 80) {
+    return {
+      score: null,
+      best: best,
+      matches: matches
+    };
+  }
+
+
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
+
+
+// ====================================================
+// ÉRZELEM KIÍRÁSA
+// ====================================================
+
+const emotionResult =
+  calculateEmotionScore();
+
+if (emotionResult) {
+
+  const scoreBox =
+    document.getElementById("emotionScore");
+
+  if (emotionResult.score !== null) {
+
+    scoreBox.textContent =
+      emotionResult.score + " /25";
+
+  } else {
+
+    scoreBox.textContent = "— /25";
+  }
+
+
+  console.table(
+    emotionResult.matches.map(item => ({
+      vers: item.title,
+      egyezes:
+        item.similarity.toFixed(1) + "%",
+      writory_erzelem:
+        item.score
+    }))
+  );
+
+
+  console.log(
+    "Legjobb érzelmi egyezés:",
+    emotionResult.best
+  );
+} 
+
   // ====================================================
 // ÉRZELEM – 10 ETALON UJJLENYOMATÁNAK ELLENŐRZÉSE
 // ====================================================
