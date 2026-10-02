@@ -586,8 +586,11 @@ function getCreativityFingerprint(measurements) {
     compression:
       inner.compression?.score ?? null,
 
-    emptyDepthRisk:
-      inner.empty_depth_risk?.score ?? null
+ emptyDepthRisk:
+  inner.empty_depth_risk?.score ?? null,
+
+necessity:
+  inner.necessity?.score ?? null
   };
 }
 
@@ -663,7 +666,14 @@ function creativitySimilarity(a, b) {
     numericSimilarity(
       a.emptyDepthRisk,
       b.emptyDepthRisk
-    )
+    ),
+
+
+numericSimilarity(
+  a.necessity,
+  b.necessity
+)
+  
   ];
 
   const average =
