@@ -590,8 +590,17 @@ function getCreativityFingerprint(measurements) {
   inner.empty_depth_risk?.score ?? null,
 
 necessity:
-  inner.necessity?.score ?? null
-  };
+  inner.necessity?.score ?? null,
+
+textualSupport:
+  inner.textual_support?.score ?? null,
+
+coherence:
+  inner.coherence?.score ?? null,
+
+resistanceToOverreading:
+  inner.resistance_to_overreading?.score ?? null
+};
 }
 
 
