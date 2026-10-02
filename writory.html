@@ -786,112 +786,154 @@ if (creativityResult) {
 }
 // ====================================================
 // ÉRZELEM – UJJLENYOMATOS KALIBRÁCIÓ
+// Ugyanazon az elven működik, mint a Kreativitás
 // ====================================================
 
 function getEmotionFingerprint(measurements) {
   if (!measurements) return null;
 
-  const depth = measurements.depth || {};
   const interpretation = measurements.interpretation || {};
+  const inner = measurements.inner || {};
+  const impact = measurements.impact || {};
 
   return {
+
+    // Belső érzelmi hitelesség
     innerAuthenticity:
       interpretation.inner_authenticity_score ?? null,
 
-    emotionalForceFields:
-      Array.isArray(interpretation.emotional_force_fields)
-        ? interpretation.emotional_force_fields.length
-        : null,
+    // A mélyebb/érzelmi olvasat szöveges alátámasztottsága
+    textualSupport:
+      inner.textual_support?.score ?? null,
 
-    hiddenTensions:
-      Array.isArray(interpretation.hidden_tensions)
-        ? interpretation.hidden_tensions.length
-        : null,
+    // A képek, motívumok szükségszerűsége
+    necessity:
+      inner.necessity?.score ?? null,
 
-    innerMovement:
-      interpretation.inner_movement ? 1 : 0,
+    // Belső összetartás
+    coherence:
+      inner.coherence?.score ?? null,
 
-    depthRecognition:
-      depth.q1_signal ?? null,
+    // Ellenállás a belemagyarázásnak
+    resistanceToOverreading:
+      inner.resistance_to_overreading?.score ?? null,
 
-    beyondStatement:
-      depth.q2_signal ?? null,
+    // Valódi mélység / álmélység elleni kontroll
+    emptyDepthRisk:
+      inner.empty_depth_risk?.score ?? null,
 
-    innerTension:
-      depth.q3_signal ?? null
+    // Önálló költői működés
+    independentPoeticLife:
+      inner.independent_poetic_life?.score ?? null,
+
+    // Saját elemző teljes hatásmérése (0–100)
+    impactScore:
+      impact.impact_score ?? null
   };
 }
 
- // ====================================================
+
+// ----------------------------------------------------
+// 0–100-AS HATÁSMÉRÉS HASONLÓSÁGA
+//
+// A Kreativitás numericSimilarity logikájának
+// 0–100-as megfelelője:
+//
+// 0–5 pont eltérés   = 100%
+// 6–10               = 90%
+// 11–15              = 70%
+// 16–20              = 50%
+// 21–25              = 30%
+// 26+                 = 0%
+// ----------------------------------------------------
+
+function impactSimilarity(a, b) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+
+  const diff = Math.abs(a - b);
+
+  if (diff <= 5)  return 1.00;
+  if (diff <= 10) return 0.90;
+  if (diff <= 15) return 0.70;
+  if (diff <= 20) return 0.50;
+  if (diff <= 25) return 0.30;
+
+  return 0;
+}
+
+
+// ----------------------------------------------------
 // KÉT ÉRZELMI UJJLENYOMAT ÖSSZEHASONLÍTÁSA
-// ====================================================
+// ----------------------------------------------------
 
 function emotionSimilarity(a, b) {
   if (!a || !b) return 0;
 
   const parts = [
-    // Belső hitelesség – ez tizedes érték is lehet
-    Math.max(
-      0,
-      1 - Math.abs(a.innerAuthenticity - b.innerAuthenticity) / 3
-    ),
 
-    // Van-e valódi belső mozgás?
-    a.innerMovement === b.innerMovement ? 1 : 0,
-
-    // Mélységi felismerés
-    textSimilarity(
-      a.depthRecognition,
-      b.depthRecognition
-    ),
-
-    // Több-e egyszerű kijelentésnél?
-    textSimilarity(
-      a.beyondStatement,
-      b.beyondStatement
-    ),
-
-    // Van-e belső feszültség?
-    textSimilarity(
-      a.innerTension,
-      b.innerTension
-    ),
-
-    // Érzelmi erőterek száma
+    // A tizedes hitelességi értéket
+    // 1–10-es mérésként hasonlítjuk
     numericSimilarity(
-      a.emotionalForceFields,
-      b.emotionalForceFields
+      Math.round(a.innerAuthenticity),
+      Math.round(b.innerAuthenticity)
     ),
 
-    // Rejtett feszültségek száma
     numericSimilarity(
-      a.hiddenTensions,
-      b.hiddenTensions
+      a.textualSupport,
+      b.textualSupport
+    ),
+
+    numericSimilarity(
+      a.necessity,
+      b.necessity
+    ),
+
+    numericSimilarity(
+      a.coherence,
+      b.coherence
+    ),
+
+    numericSimilarity(
+      a.resistanceToOverreading,
+      b.resistanceToOverreading
+    ),
+
+    numericSimilarity(
+      a.emptyDepthRisk,
+      b.emptyDepthRisk
+    ),
+
+    numericSimilarity(
+      a.independentPoeticLife,
+      b.independentPoeticLife
+    ),
+
+    // 0–100-as Hatás
+    impactSimilarity(
+      a.impactScore,
+      b.impactScore
     )
   ];
 
-  const validParts =
-    parts.filter(Number.isFinite);
-
-  if (validParts.length === 0) return 0;
-
   const average =
-    validParts.reduce((sum, value) => sum + value, 0) /
-    validParts.length;
+    parts.reduce((sum, value) => sum + value, 0) /
+    parts.length;
 
   return average * 100;
-} 
+}
 
- // ====================================================
-// AKTUÁLIS VERS ÉRZELMI PONTJÁNAK KERESÉSE
-// ====================================================
+
+// ----------------------------------------------------
+// AKTUÁLIS VERS ÉRZELMI UJJLENYOMATÁNAK KERESÉSE
+// ----------------------------------------------------
 
 function calculateEmotionScore() {
 
   const currentFingerprint =
     getEmotionFingerprint(data);
 
-  const samples = getCalibrationSamples();
+  const samples =
+    getCalibrationSamples();
 
   if (!currentFingerprint || samples.length === 0) {
     return null;
@@ -923,7 +965,8 @@ function calculateEmotionScore() {
   if (!best) return null;
 
 
-  // Ugyanaz a biztonsági küszöb, mint a kreativitásnál.
+  // Ugyanaz a 80%-os biztonsági küszöb,
+  // mint a Kreativitásnál.
   if (best.similarity < 80) {
     return {
       score: null,
@@ -941,9 +984,9 @@ function calculateEmotionScore() {
 }
 
 
-// ====================================================
+// ----------------------------------------------------
 // ÉRZELEM KIÍRÁSA
-// ====================================================
+// ----------------------------------------------------
 
 const emotionResult =
   calculateEmotionScore();
@@ -964,6 +1007,9 @@ if (emotionResult) {
   }
 
 
+  // Egyelőre mind a 10 találatot mutatjuk,
+  // ugyanúgy, mint a Kreativitásnál.
+
   console.table(
     emotionResult.matches.map(item => ({
       vers: item.title,
@@ -979,31 +1025,12 @@ if (emotionResult) {
     "Legjobb érzelmi egyezés:",
     emotionResult.best
   );
-} 
 
-  // ====================================================
-// ÉRZELEM – 10 ETALON UJJLENYOMATÁNAK ELLENŐRZÉSE
-// ====================================================
-
-const emotionTestSamples = getCalibrationSamples();
-
-console.table(
-  emotionTestSamples.map(sample => {
-    const f = getEmotionFingerprint(sample.measurements);
-
-    return {
-      vers: sample.title,
-      writory_erzelem: sample.writory.emotion,
-      hitelesseg: f?.innerAuthenticity,
-      erzelmi_eroterek: f?.emotionalForceFields,
-      rejtett_feszultsegek: f?.hiddenTensions,
-      belso_mozgas: f?.innerMovement,
-      felismeres: f?.depthRecognition,
-      tobb_mint_kijelentes: f?.beyondStatement,
-      belso_feszultseg: f?.innerTension
-    };
-  })
-);
+  console.log(
+    "Aktuális érzelmi ujjlenyomat:",
+    getEmotionFingerprint(data)
+  );
+}
   
   function downloadCalibrationData() {
 
