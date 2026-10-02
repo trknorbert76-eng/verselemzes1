@@ -589,11 +589,14 @@ function saveCalibrationSample() {
       total: reference.total
     },
 
-    poem: poem,
+poem: poem,
 
-    measurements: data,
+measurements: data,
 
-    saved_at: new Date().toISOString()
+// Stabil, JavaScriptből számolt 5-ös vers-ujjlenyomat
+jsFingerprint: stablePoemFingerprint,
+
+saved_at: new Date().toISOString()
   };
 
 
