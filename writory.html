@@ -785,19 +785,42 @@ if (creativityResult) {
   );
 }
 // ====================================================
-// ÉRZELEM – ELÉRHETŐ MÉRÉSEK FELTÉRKÉPEZÉSE
+// ÉRZELEM – UJJLENYOMATOS KALIBRÁCIÓ
 // ====================================================
 
-console.log("=== ÉRZELEMHEZ VIZSGÁLT MÉRÉSEK ===");
+function getEmotionFingerprint(measurements) {
+  if (!measurements) return null;
 
-console.log("DEPTH:");
-console.log(data.depth);
+  const depth = measurements.depth || {};
+  const interpretation = measurements.interpretation || {};
 
-console.log("INNER:");
-console.log(data.inner);
+  return {
+    innerAuthenticity:
+      interpretation.inner_authenticity_score ?? null,
 
-console.log("INTERPRETATION:");
-console.log(data.interpretation);
+    emotionalForceFields:
+      Array.isArray(interpretation.emotional_force_fields)
+        ? interpretation.emotional_force_fields.length
+        : null,
+
+    hiddenTensions:
+      Array.isArray(interpretation.hidden_tensions)
+        ? interpretation.hidden_tensions.length
+        : null,
+
+    innerMovement:
+      interpretation.inner_movement ? 1 : 0,
+
+    depthRecognition:
+      depth.q1_signal ?? null,
+
+    beyondStatement:
+      depth.q2_signal ?? null,
+
+    innerTension:
+      depth.q3_signal ?? null
+  };
+}
   
   function downloadCalibrationData() {
 
