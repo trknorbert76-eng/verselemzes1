@@ -821,6 +821,30 @@ function getEmotionFingerprint(measurements) {
       depth.q3_signal ?? null
   };
 }
+
+  // ====================================================
+// ÉRZELEM – 10 ETALON UJJLENYOMATÁNAK ELLENŐRZÉSE
+// ====================================================
+
+const emotionTestSamples = getCalibrationSamples();
+
+console.table(
+  emotionTestSamples.map(sample => {
+    const f = getEmotionFingerprint(sample.measurements);
+
+    return {
+      vers: sample.title,
+      writory_erzelem: sample.writory.emotion,
+      hitelesseg: f?.innerAuthenticity,
+      erzelmi_eroterek: f?.emotionalForceFields,
+      rejtett_feszultsegek: f?.hiddenTensions,
+      belso_mozgas: f?.innerMovement,
+      felismeres: f?.depthRecognition,
+      tobb_mint_kijelentes: f?.beyondStatement,
+      belso_feszultseg: f?.innerTension
+    };
+  })
+);
   
   function downloadCalibrationData() {
 
