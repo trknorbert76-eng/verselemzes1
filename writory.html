@@ -315,6 +315,82 @@ const data = {
   wolker: readStorage("analysis_wolker")
 };
 
+  // ====================================================
+// STABIL JS VERS-UJJLENYOMAT
+// ====================================================
+
+function createStablePoemFingerprint(text) {
+  const normalized = String(text || "")
+    .replace(/\r\n/g, "\n")
+    .trim();
+
+  const lines = normalized
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  const words = normalized
+    .toLocaleLowerCase("hu-HU")
+    .match(/[a-záéíóöőúüű]+/gi) || [];
+
+  const uniqueWords = new Set(words);
+
+  // 1. SORPROFIL
+  // sorok száma + átlagos sorhossz
+  const avgLineLength = lines.length
+    ? lines.reduce((sum, line) => sum + line.length, 0) / lines.length
+    : 0;
+
+  const lineProfile =
+    (lines.length * 31 + Math.round(avgLineLength * 10) * 17) % 101;
+
+  // 2. SZÓPROFIL
+  // szószám + egyedi szavak száma
+  const wordProfile =
+    (words.length * 29 + uniqueWords.size * 23) % 101;
+
+  // 3. ÍRÁSJELPROFIL
+  const punctuation =
+    (normalized.match(/[,.!?;:…\-–—]/g) || []).length;
+
+  const punctuationProfile =
+    (punctuation * 37 + lines.length * 11) % 101;
+
+  // 4. ISMÉTLŐDÉSI PROFIL
+  const repetitions =
+    words.length - uniqueWords.size;
+
+  const repetitionProfile =
+    (repetitions * 41 + uniqueWords.size * 13) % 101;
+
+  // 5. KARAKTERPROFIL
+  // maga a teljes szöveg is beleszól
+  let hash = 0;
+
+  for (let i = 0; i < normalized.length; i++) {
+    hash = ((hash << 5) - hash + normalized.charCodeAt(i)) | 0;
+  }
+
+  const characterProfile =
+    Math.abs(hash) % 101;
+
+  return {
+    lineProfile,
+    wordProfile,
+    punctuationProfile,
+    repetitionProfile,
+    characterProfile
+  };
+}
+
+const stablePoemFingerprint =
+  createStablePoemFingerprint(poem);
+
+console.log(
+  "Stabil JS vers-ujjlenyomat:",
+  stablePoemFingerprint
+);
+
 
 // -------------------------
 // AKTUÁLIS VERS
