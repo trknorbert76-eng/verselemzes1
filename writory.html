@@ -1210,6 +1210,215 @@ if (jsSimilarity === 100) {
   };
 }
 
+  // ====================================================
+// SZERKEZET – UJJLENYOMATOS KALIBRÁCIÓ
+// ====================================================
+
+function getStructureFingerprint(measurements) {
+  if (!measurements) return null;
+
+  const structure = measurements.structure || {};
+  const inner = measurements.inner || {};
+  const checkSeed = measurements.check_seed || {};
+
+  return {
+
+    // Van-e valódi szerkezeti változás?
+    changeDetected:
+      structure.change_detected ?? null,
+
+    changeProved:
+      structure.change_proved ?? null,
+
+    // Milyen típusú a szerkezeti ív?
+    structureType:
+      structure.structure_type ?? null,
+
+    // Milyen erős a kohézió?
+    cohesionStrength:
+      structure.cohesion_strength ?? null,
+
+    // Milyen jellegű a kohézió?
+    cohesionType:
+      structure.cohesion_type ?? null,
+
+    // Belső összetartás 1–10
+    coherence:
+      inner.coherence?.score ?? null,
+
+    // Szükségszerűség 1–10
+    necessity:
+      inner.necessity?.score ?? null,
+
+    // Sűrítés / szerkezeti feszesség 1–10
+    compression:
+      inner.compression?.score ?? null,
+
+    // Az elemző külön kohéziós hibamérése
+    cohesionProblem:
+      checkSeed.cohesion_problem_percent ?? null
+  };
+}
+
+
+// ----------------------------------------------------
+// SZÁZALÉKOS KOHÉZIÓS HIBA HASONLÓSÁGA
+// ----------------------------------------------------
+
+function percentSimilarity(a, b) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+
+  const diff = Math.abs(a - b);
+
+  if (diff <= 5)  return 1.00;
+  if (diff <= 10) return 0.90;
+  if (diff <= 20) return 0.70;
+  if (diff <= 30) return 0.50;
+  if (diff <= 40) return 0.30;
+
+  return 0;
+}
+
+
+// ----------------------------------------------------
+// KÉT SZERKEZETI UJJLENYOMAT ÖSSZEHASONLÍTÁSA
+// ----------------------------------------------------
+
+function structureSimilarity(a, b) {
+  if (!a || !b) return 0;
+
+  const parts = [
+
+    textSimilarity(
+      a.changeDetected,
+      b.changeDetected
+    ),
+
+    textSimilarity(
+      a.changeProved,
+      b.changeProved
+    ),
+
+    textSimilarity(
+      a.structureType,
+      b.structureType
+    ),
+
+    textSimilarity(
+      a.cohesionStrength,
+      b.cohesionStrength
+    ),
+
+    textSimilarity(
+      a.cohesionType,
+      b.cohesionType
+    ),
+
+    numericSimilarity(
+      a.coherence,
+      b.coherence
+    ),
+
+    numericSimilarity(
+      a.necessity,
+      b.necessity
+    ),
+
+    numericSimilarity(
+      a.compression,
+      b.compression
+    ),
+
+    percentSimilarity(
+      a.cohesionProblem,
+      b.cohesionProblem
+    )
+  ];
+
+  const average =
+    parts.reduce((sum, value) => sum + value, 0) /
+    parts.length;
+
+  return average * 100;
+}
+
+
+// ----------------------------------------------------
+// AKTUÁLIS VERS SZERKEZETI UJJLENYOMATÁNAK KERESÉSE
+// ----------------------------------------------------
+
+function calculateStructureScore() {
+
+  const currentFingerprint =
+    getStructureFingerprint(data);
+
+  const samples =
+    getCalibrationSamples();
+
+  if (!currentFingerprint || samples.length === 0) {
+    return null;
+  }
+
+  const matches = samples
+    .map(sample => {
+
+      const fingerprint =
+        getStructureFingerprint(sample.measurements);
+
+      let similarity =
+        structureSimilarity(
+          currentFingerprint,
+          fingerprint
+        );
+
+      // Stabil JS-ujjlenyomat korrekció
+      const jsSimilarity =
+        jsFingerprintSimilarity(
+          stablePoemFingerprint,
+          sample.jsFingerprint
+        );
+
+      // Pontosan ugyanaz az etalonvers
+      if (jsSimilarity === 100) {
+        similarity = 100;
+      } else {
+        similarity = Math.min(
+          100,
+          similarity + jsFingerprintBonus(jsSimilarity)
+        );
+      }
+
+      return {
+        title: sample.title,
+        similarity: similarity,
+        score: sample.writory.structure
+      };
+    })
+    .sort((a, b) => b.similarity - a.similarity);
+
+
+  const best = matches[0];
+
+  if (!best) return null;
+
+
+  // Ugyanaz a biztonsági küszöb
+  if (best.similarity < 80) {
+    return {
+      score: null,
+      best: best,
+      matches: matches
+    };
+  }
+
+
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
+
 
 // ----------------------------------------------------
 // ÉRZELEM KIÍRÁSA
@@ -1256,6 +1465,53 @@ if (emotionResult) {
   console.log(
     "Aktuális érzelmi ujjlenyomat:",
     getEmotionFingerprint(data)
+  );
+}
+
+  // ====================================================
+// SZERKEZET KIÍRÁSA
+// ====================================================
+
+const structureResult =
+  calculateStructureScore();
+
+if (structureResult) {
+
+  const scoreBox =
+    document.getElementById("structureScore");
+
+  if (structureResult.score !== null) {
+
+    scoreBox.textContent =
+      structureResult.score + " /20";
+
+  } else {
+
+    scoreBox.textContent = "— /20";
+  }
+
+
+  // Egyelőre mind a 10 találatot mutatjuk.
+
+  console.table(
+    structureResult.matches.map(item => ({
+      vers: item.title,
+      egyezes:
+        item.similarity.toFixed(1) + "%",
+      writory_szerkezet:
+        item.score
+    }))
+  );
+
+
+  console.log(
+    "Legjobb szerkezeti egyezés:",
+    structureResult.best
+  );
+
+  console.log(
+    "Aktuális szerkezeti ujjlenyomat:",
+    getStructureFingerprint(data)
   );
 }
   
