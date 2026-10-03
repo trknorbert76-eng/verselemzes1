@@ -723,6 +723,49 @@ function numericSimilarity(a, b) {
 
   return 0;
 }
+
+  // ====================================================
+// KÖZELI WRITORY-TALÁLATOK KÖZÖS SÚLYOZÁSA
+// ====================================================
+
+function estimateNearbyWritoryScore(matches, maxGap = 3) {
+
+  if (!matches || matches.length === 0) {
+    return null;
+  }
+
+  const best = matches[0];
+
+  // Saját etalonvers: az eredeti Writory-pont marad.
+  if (best.jsSimilarity === 100) {
+    return best.score;
+  }
+
+  // Csak azok számítanak, amelyek legfeljebb
+  // 3 százalékponttal vannak a legjobb találat mögött.
+  const nearby = matches.filter(item =>
+    best.similarity - item.similarity <= maxGap
+  );
+
+  const totalWeight =
+    nearby.reduce(
+      (sum, item) => sum + item.similarity,
+      0
+    );
+
+  if (totalWeight === 0) {
+    return best.score;
+  }
+
+  const weightedScore =
+    nearby.reduce(
+      (sum, item) =>
+        sum + item.score * item.similarity,
+      0
+    ) / totalWeight;
+
+  return Math.round(weightedScore);
+}
 // ====================================================
 // STABIL JS-UJJLENYOMAT HASONLÓSÁG + BÓNUSZ TESZT
 // ====================================================
@@ -900,11 +943,12 @@ if (jsSimilarity === 100) {
   );
 }
 
-      return {
-        title: sample.title,
-        similarity: similarity,
-        score: sample.writory.creativity
-      };
+ return {
+  title: sample.title,
+  similarity: similarity,
+  jsSimilarity: jsSimilarity,
+  score: sample.writory.creativity
+};
     })
     .sort((a, b) => b.similarity - a.similarity);
 
@@ -914,7 +958,7 @@ if (jsSimilarity === 100) {
   if (!best) return null;
 
 
-  // 80% alatt még nem adunk Writory-pontot.
+   // 80% alatt még nem adunk Writory-pontot.
   if (best.similarity < 80) {
     return {
       score: null,
@@ -923,14 +967,12 @@ if (jsSimilarity === 100) {
     };
   }
 
-
   return {
-    score: best.score,
+    score: estimateNearbyWritoryScore(matches),
     best: best,
     matches: matches
   };
 }
-
 
 // ----------------------------------------------------
 // KREATIVITÁS KIÍRÁSA
