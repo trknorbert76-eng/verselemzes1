@@ -1173,7 +1173,7 @@ if (jsSimilarity === 100) {
 } else {
   // Idegen versnél csak kis korrekció.
   similarity = Math.min(
-    100,
+    99,
     similarity + jsFingerprintBonus(jsSimilarity)
   );
 }
@@ -1383,7 +1383,7 @@ function calculateStructureScore() {
         similarity = 100;
       } else {
         similarity = Math.min(
-          100,
+          99,
           similarity + jsFingerprintBonus(jsSimilarity)
         );
       }
@@ -1662,7 +1662,7 @@ function calculateLanguageScore() {
       } else {
         // Idegen versnél csak kis korrekció.
         similarity = Math.min(
-          100,
+          99,
           similarity + jsFingerprintBonus(jsSimilarity)
         );
       }
