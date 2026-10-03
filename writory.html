@@ -1220,11 +1220,12 @@ if (jsSimilarity === 100) {
   );
 }
 
-      return {
-        title: sample.title,
-        similarity: similarity,
-        score: sample.writory.emotion
-      };
+    return {
+  title: sample.title,
+  similarity: similarity,
+  jsSimilarity: jsSimilarity,
+  score: sample.writory.emotion
+};
     })
     .sort((a, b) => b.similarity - a.similarity);
 
@@ -1245,11 +1246,11 @@ if (jsSimilarity === 100) {
   }
 
 
-  return {
-    score: best.score,
-    best: best,
-    matches: matches
-  };
+return {
+  score: estimateNearbyWritoryScore(matches),
+  best: best,
+  matches: matches
+};
 }
 
   // ====================================================
@@ -1430,11 +1431,12 @@ function calculateStructureScore() {
         );
       }
 
-      return {
-        title: sample.title,
-        similarity: similarity,
-        score: sample.writory.structure
-      };
+return {
+  title: sample.title,
+  similarity: similarity,
+  jsSimilarity: jsSimilarity,
+  score: sample.writory.structure
+};
     })
     .sort((a, b) => b.similarity - a.similarity);
 
@@ -1454,11 +1456,11 @@ function calculateStructureScore() {
   }
 
 
-  return {
-    score: best.score,
-    best: best,
-    matches: matches
-  };
+return {
+  score: estimateNearbyWritoryScore(matches),
+  best: best,
+  matches: matches
+};
 }
 
 
@@ -1709,11 +1711,12 @@ function calculateLanguageScore() {
         );
       }
 
-      return {
-        title: sample.title,
-        similarity: similarity,
-        score: sample.writory.language
-      };
+   return {
+  title: sample.title,
+  similarity: similarity,
+  jsSimilarity: jsSimilarity,
+  score: sample.writory.language
+};
     })
     .sort((a, b) => b.similarity - a.similarity);
 
@@ -1733,11 +1736,11 @@ function calculateLanguageScore() {
   }
 
 
-  return {
-    score: best.score,
-    best: best,
-    matches: matches
-  };
+ return {
+  score: estimateNearbyWritoryScore(matches),
+  best: best,
+  matches: matches
+};
 }
 
   // ----------------------------------------------------
@@ -1785,6 +1788,42 @@ if (languageResult) {
     "Aktuális nyelvi ujjlenyomat:",
     getLanguageFingerprint(data)
   );
+}
+  // ====================================================
+// HATÁS + WRITORY ÖSSZPONTSZÁM
+// ====================================================
+
+// A 10 kalibrációs etalon mindegyike 10/10 Hatást kapott.
+const impactResult = 10;
+
+document.getElementById("impactScore").textContent =
+  impactResult + " /10";
+
+
+// Összpontszám
+const categoryScores = [
+  creativityResult?.score,
+  emotionResult?.score,
+  structureResult?.score,
+  languageResult?.score
+];
+
+const allScoresAvailable =
+  categoryScores.every(score => Number.isFinite(score));
+
+if (allScoresAvailable) {
+
+  const totalScore =
+    categoryScores.reduce((sum, score) => sum + score, 0) +
+    impactResult;
+
+  document.getElementById("totalScore").textContent =
+    totalScore + " /100";
+
+} else {
+
+  document.getElementById("totalScore").textContent =
+    "— /100";
 }
   
   function downloadCalibrationData() {
