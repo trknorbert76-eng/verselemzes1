@@ -1514,6 +1514,236 @@ if (structureResult) {
     getStructureFingerprint(data)
   );
 }
+
+  // ====================================================
+// NYELV – UJJLENYOMATOS KALIBRÁCIÓ
+// ====================================================
+
+function getLanguageFingerprint(measurements) {
+  if (!measurements) return null;
+
+  const images = measurements.images || {};
+  const expression = measurements.expression || {};
+  const rhythm = measurements.rhythm || {};
+  const inner = measurements.inner || {};
+
+  return {
+
+    // Képi nyelv eredetisége
+    imageOriginality:
+      images.originality ?? null,
+
+    // Saját költői hang eredetisége
+    voiceOriginality:
+      expression.originality_of_voice ?? null,
+
+    // Nyelvi / költői konkrétság és erő
+    concretePower:
+      inner.concrete_power?.score ?? null,
+
+    // Sűrítés, nyelvi tömörség
+    compression:
+      inner.compression?.score ?? null,
+
+    // A képek és megfogalmazások szükségszerűsége
+    necessity:
+      inner.necessity?.score ?? null,
+
+    // A szöveg ténylegesen megtartja-e az értelmezést
+    textualSupport:
+      inner.textual_support?.score ?? null,
+
+    // Önálló költői működés
+    independentPoeticLife:
+      inner.independent_poetic_life?.score ?? null,
+
+    // Ellenáll-e a puszta belemagyarázásnak
+    resistanceToOverreading:
+      inner.resistance_to_overreading?.score ?? null
+  };
+}
+
+  // ----------------------------------------------------
+// KÉT NYELVI UJJLENYOMAT ÖSSZEHASONLÍTÁSA
+// ----------------------------------------------------
+
+function languageSimilarity(a, b) {
+  if (!a || !b) return 0;
+
+  const parts = [
+
+    textSimilarity(
+      a.imageOriginality,
+      b.imageOriginality
+    ),
+
+    textSimilarity(
+      a.voiceOriginality,
+      b.voiceOriginality
+    ),
+
+    numericSimilarity(
+      a.concretePower,
+      b.concretePower
+    ),
+
+    numericSimilarity(
+      a.compression,
+      b.compression
+    ),
+
+    numericSimilarity(
+      a.necessity,
+      b.necessity
+    ),
+
+    numericSimilarity(
+      a.textualSupport,
+      b.textualSupport
+    ),
+
+    numericSimilarity(
+      a.independentPoeticLife,
+      b.independentPoeticLife
+    ),
+
+    numericSimilarity(
+      a.resistanceToOverreading,
+      b.resistanceToOverreading
+    )
+  ];
+
+  const average =
+    parts.reduce((sum, value) => sum + value, 0) /
+    parts.length;
+
+  return average * 100;
+}
+
+  // ----------------------------------------------------
+// AKTUÁLIS VERS NYELVI UJJLENYOMATÁNAK KERESÉSE
+// ----------------------------------------------------
+
+function calculateLanguageScore() {
+
+  const currentFingerprint =
+    getLanguageFingerprint(data);
+
+  const samples =
+    getCalibrationSamples();
+
+  if (!currentFingerprint || samples.length === 0) {
+    return null;
+  }
+
+  const matches = samples
+    .map(sample => {
+
+      const fingerprint =
+        getLanguageFingerprint(sample.measurements);
+
+      let similarity =
+        languageSimilarity(
+          currentFingerprint,
+          fingerprint
+        );
+
+      // Stabil JS-ujjlenyomat korrekció
+      const jsSimilarity =
+        jsFingerprintSimilarity(
+          stablePoemFingerprint,
+          sample.jsFingerprint
+        );
+
+      // Ha pontosan ugyanaz az etalonvers:
+      // biztos önazonosítás.
+      if (jsSimilarity === 100) {
+        similarity = 100;
+      } else {
+        // Idegen versnél csak kis korrekció.
+        similarity = Math.min(
+          100,
+          similarity + jsFingerprintBonus(jsSimilarity)
+        );
+      }
+
+      return {
+        title: sample.title,
+        similarity: similarity,
+        score: sample.writory.language
+      };
+    })
+    .sort((a, b) => b.similarity - a.similarity);
+
+
+  const best = matches[0];
+
+  if (!best) return null;
+
+
+  // Ugyanaz a 80%-os biztonsági küszöb
+  if (best.similarity < 80) {
+    return {
+      score: null,
+      best: best,
+      matches: matches
+    };
+  }
+
+
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
+
+  // ----------------------------------------------------
+// NYELV KIÍRÁSA
+// ----------------------------------------------------
+
+const languageResult =
+  calculateLanguageScore();
+
+if (languageResult) {
+
+  const scoreBox =
+    document.getElementById("languageScore");
+
+  if (languageResult.score !== null) {
+
+    scoreBox.textContent =
+      languageResult.score + " /20";
+
+  } else {
+
+    scoreBox.textContent = "— /20";
+  }
+
+
+  // Mind a 10 találatot mutatjuk ellenőrzéshez.
+
+  console.table(
+    languageResult.matches.map(item => ({
+      vers: item.title,
+      egyezes:
+        item.similarity.toFixed(1) + "%",
+      writory_nyelv:
+        item.score
+    }))
+  );
+
+
+  console.log(
+    "Legjobb nyelvi egyezés:",
+    languageResult.best
+  );
+
+  console.log(
+    "Aktuális nyelvi ujjlenyomat:",
+    getLanguageFingerprint(data)
+  );
+}
   
   function downloadCalibrationData() {
 
