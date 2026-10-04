@@ -965,20 +965,8 @@ const jsSimilarity =
     sample.jsFingerprint
   );
 
-// Ha pontosan ugyanaz az etalonvers:
-// biztos önazonosítás.
 if (jsSimilarity === 100) {
-  // Ugyanaz a vers: biztos önazonosítás
   similarity = 100;
-} else {
-  // Új vers:
-  // 92% kategória-specifikus egyezés
-  // 8% stabil versprofil
-  similarity =
-    (similarity * 0.92) +
-    (jsSimilarity * 0.08);
-
-  similarity = Math.min(99, similarity);
 }
 
  return {
@@ -1249,12 +1237,7 @@ const jsSimilarity =
 
 if (jsSimilarity === 100) {
   similarity = 100;
-} else {
-  similarity =
-    (similarity * 0.92) +
-    (jsSimilarity * 0.08);
 
-  similarity = Math.min(99, similarity);
 }
 
     return {
