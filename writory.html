@@ -1362,6 +1362,14 @@ function getStructureFingerprint(measurements) {
 // ----------------------------------------------------
 
 function percentSimilarity(a, b) {
+  if (
+  a === null || a === undefined ||
+  b === null || b === undefined ||
+  !Number.isFinite(Number(a)) ||
+  !Number.isFinite(Number(b))
+) {
+  return 0;
+}
   if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
 
   const diff = Math.abs(a - b);
