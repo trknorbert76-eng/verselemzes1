@@ -1290,7 +1290,6 @@ return {
 };
 }
 
-  // ====================================================
 // SZERKEZET – UJJLENYOMATOS KALIBRÁCIÓ
 // ====================================================
 
@@ -1298,6 +1297,7 @@ function getStructureFingerprint(measurements) {
   if (!measurements) return null;
 
   const structure = measurements.structure || {};
+  const rhythm = measurements.rhythm || {};
   const inner = measurements.inner || {};
   const checkSeed = measurements.check_seed || {};
 
@@ -1322,6 +1322,18 @@ function getStructureFingerprint(measurements) {
     cohesionType:
       structure.cohesion_type ?? null,
 
+    // Mi szervezi a verset?
+    organizingPrinciple:
+      structure.organizing_principle ?? null,
+
+    // Van-e / milyen a fordulópont?
+    turningPoint:
+      structure.turning_point ?? null,
+
+    // A szerkezet mozgása
+    structureMovement:
+      structure.movement ?? null,
+
     // Belső összetartás 1–10
     coherence:
       inner.coherence?.score ?? null,
@@ -1336,7 +1348,23 @@ function getStructureFingerprint(measurements) {
 
     // Az elemző külön kohéziós hibamérése
     cohesionProblem:
-      checkSeed.cohesion_problem_percent ?? null
+      checkSeed.cohesion_problem_percent ?? null,
+
+    // Ritmikai szerkezet
+    rhythmType:
+      rhythm.rhythm_type ?? null,
+
+    // Folyamatos / akadozó stb.
+    rhythmFlow:
+      rhythm.flow ?? null,
+
+    // Ritmikai mozgás / lendület
+    rhythmMovement:
+      rhythm.movement ?? null,
+
+    // Megtorpanások / törések
+    rhythmBreaks:
+      rhythm.breaks ?? null
   };
 }
 
@@ -1359,67 +1387,161 @@ function percentSimilarity(a, b) {
   return 0;
 }
 
-
-// ----------------------------------------------------
-// KÉT SZERKEZETI UJJLENYOMAT ÖSSZEHASONLÍTÁSA
-// ----------------------------------------------------
-
+// SZERKEZETI HASONLÓSÁG – SÚLYOZOTT MÉRÉSI PROFIL
 function structureSimilarity(a, b) {
   if (!a || !b) return 0;
 
-  const parts = [
+  const weightedParts = [
 
-    textSimilarity(
-      a.changeDetected,
-      b.changeDetected
-    ),
+    // Valódi szerkezeti elmozdulás
+    {
+      value: textSimilarity(
+        a.changeDetected,
+        b.changeDetected
+      ),
+      weight: 12
+    },
 
-    textSimilarity(
-      a.changeProved,
-      b.changeProved
-    ),
+    // Bizonyított-e a változás
+    {
+      value: textSimilarity(
+        a.changeProved,
+        b.changeProved
+      ),
+      weight: 8
+    },
 
-    textSimilarity(
-      a.structureType,
-      b.structureType
-    ),
+    // Szerkezeti ív típusa
+    {
+      value: textSimilarity(
+        a.structureType,
+        b.structureType
+      ),
+      weight: 12
+    },
 
-    textSimilarity(
-      a.cohesionStrength,
-      b.cohesionStrength
-    ),
+    // Kohézió erőssége
+    {
+      value: textSimilarity(
+        a.cohesionStrength,
+        b.cohesionStrength
+      ),
+      weight: 10
+    },
 
-    textSimilarity(
-      a.cohesionType,
-      b.cohesionType
-    ),
+    // Kohézió jellege
+    {
+      value: textSimilarity(
+        a.cohesionType,
+        b.cohesionType
+      ),
+      weight: 8
+    },
 
-    numericSimilarity(
-      a.coherence,
-      b.coherence
-    ),
+    // Belső koherencia
+    {
+      value: numericSimilarity(
+        a.coherence,
+        b.coherence
+      ),
+      weight: 10
+    },
 
-    numericSimilarity(
-      a.necessity,
-      b.necessity
-    ),
+    // Szükségszerűség
+    {
+      value: numericSimilarity(
+        a.necessity,
+        b.necessity
+      ),
+      weight: 7
+    },
 
-    numericSimilarity(
-      a.compression,
-      b.compression
-    ),
+    // Szerkezeti feszesség
+    {
+      value: numericSimilarity(
+        a.compression,
+        b.compression
+      ),
+      weight: 7
+    },
 
-    percentSimilarity(
-      a.cohesionProblem,
-      b.cohesionProblem
-    )
+    // Kohéziós problémák
+    {
+      value: percentSimilarity(
+        a.cohesionProblem,
+        b.cohesionProblem
+      ),
+      weight: 6
+    },
+
+    // Ritmustípus
+    {
+      value: textSimilarity(
+        a.rhythmType,
+        b.rhythmType
+      ),
+      weight: 5
+    },
+
+    // Ritmikai folyás
+    {
+      value: textSimilarity(
+        a.rhythmFlow,
+        b.rhythmFlow
+      ),
+      weight: 5
+    },
+
+    // Ritmikai mozgás
+    {
+      value: textSimilarity(
+        a.rhythmMovement,
+        b.rhythmMovement
+      ),
+      weight: 4
+    },
+
+    // Ritmikai törések
+    {
+      value: textSimilarity(
+        a.rhythmBreaks,
+        b.rhythmBreaks
+      ),
+      weight: 3
+    },
+
+    // Szervezőelv
+    {
+      value: textSimilarity(
+        a.organizingPrinciple,
+        b.organizingPrinciple
+      ),
+      weight: 2
+    },
+
+    // Fordulópont
+    {
+      value: textSimilarity(
+        a.turningPoint,
+        b.turningPoint
+      ),
+      weight: 1
+    }
   ];
 
-  const average =
-    parts.reduce((sum, value) => sum + value, 0) /
-    parts.length;
+  const totalWeight =
+    weightedParts.reduce(
+      (sum, part) => sum + part.weight,
+      0
+    );
 
-  return average * 100;
+  const weightedSimilarity =
+    weightedParts.reduce(
+      (sum, part) => sum + (part.value * part.weight),
+      0
+    );
+
+  return (weightedSimilarity / totalWeight) * 100;
 }
 
 
