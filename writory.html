@@ -1290,81 +1290,66 @@ return {
 };
 }
 
-// SZERKEZET – UJJLENYOMATOS KALIBRÁCIÓ
+// ====================================================
+// SZERKEZET – STABIL MÉRÉSI PROFIL
 // ====================================================
 
 function getStructureFingerprint(measurements) {
   if (!measurements) return null;
 
   const structure = measurements.structure || {};
-  const rhythm = measurements.rhythm || {};
   const inner = measurements.inner || {};
   const checkSeed = measurements.check_seed || {};
 
   return {
 
-    // Van-e valódi szerkezeti változás?
+    // KÖTÖTT SZERKEZETI KATEGÓRIÁK
+
     changeDetected:
       structure.change_detected ?? null,
 
     changeProved:
       structure.change_proved ?? null,
 
-    // Milyen típusú a szerkezeti ív?
     structureType:
       structure.structure_type ?? null,
 
-    // Milyen erős a kohézió?
     cohesionStrength:
       structure.cohesion_strength ?? null,
 
-    // Milyen jellegű a kohézió?
     cohesionType:
       structure.cohesion_type ?? null,
 
-    // Mi szervezi a verset?
-    organizingPrinciple:
-      structure.organizing_principle ?? null,
 
-    // Van-e / milyen a fordulópont?
-    turningPoint:
-      structure.turning_point ?? null,
+    // BELSŐ SZÁMOS MÉRÉSEK
 
-    // A szerkezet mozgása
-    structureMovement:
-      structure.movement ?? null,
+    textualSupport:
+      inner.textual_support?.score ?? null,
 
-    // Belső összetartás 1–10
     coherence:
       inner.coherence?.score ?? null,
 
-    // Szükségszerűség 1–10
     necessity:
       inner.necessity?.score ?? null,
 
-    // Sűrítés / szerkezeti feszesség 1–10
     compression:
       inner.compression?.score ?? null,
 
-    // Az elemző külön kohéziós hibamérése
+
+    // STABIL ELLENŐRZŐ MÉRÉSEK
+
     cohesionProblem:
       checkSeed.cohesion_problem_percent ?? null,
 
-    // Ritmikai szerkezet
-    rhythmType:
-      rhythm.rhythm_type ?? null,
+    meaningUncertainty:
+      checkSeed.meaning_uncertainty_percent ?? null,
 
-    // Folyamatos / akadozó stb.
-    rhythmFlow:
-      rhythm.flow ?? null,
+    meaningTwist:
+      checkSeed.meaning_twist_percent ?? null,
 
-    // Ritmikai mozgás / lendület
-    rhythmMovement:
-      rhythm.movement ?? null,
+    understandability:
+      checkSeed.understandability_score ?? null
 
-    // Megtorpanások / törések
-    rhythmBreaks:
-      rhythm.breaks ?? null
   };
 }
 
@@ -1393,13 +1378,13 @@ function structureSimilarity(a, b) {
 
   const weightedParts = [
 
-    // Valódi szerkezeti elmozdulás
+    // Valódi szerkezeti változás
     {
       value: textSimilarity(
         a.changeDetected,
         b.changeDetected
       ),
-      weight: 12
+      weight: 10
     },
 
     // Bizonyított-e a változás
@@ -1426,14 +1411,23 @@ function structureSimilarity(a, b) {
         a.cohesionStrength,
         b.cohesionStrength
       ),
-      weight: 10
+      weight: 8
     },
 
-    // Kohézió jellege
+    // Kohézió típusa
     {
       value: textSimilarity(
         a.cohesionType,
         b.cohesionType
+      ),
+      weight: 7
+    },
+
+    // Szövegbeli alátámasztottság
+    {
+      value: numericSimilarity(
+        a.textualSupport,
+        b.textualSupport
       ),
       weight: 8
     },
@@ -1453,7 +1447,7 @@ function structureSimilarity(a, b) {
         a.necessity,
         b.necessity
       ),
-      weight: 7
+      weight: 8
     },
 
     // Szerkezeti feszesség
@@ -1462,71 +1456,45 @@ function structureSimilarity(a, b) {
         a.compression,
         b.compression
       ),
-      weight: 7
+      weight: 8
     },
 
-    // Kohéziós problémák
+    // Kohéziós probléma
     {
       value: percentSimilarity(
         a.cohesionProblem,
         b.cohesionProblem
       ),
-      weight: 6
+      weight: 7
     },
 
-    // Ritmustípus
+    // Jelentés bizonytalansága
     {
-      value: textSimilarity(
-        a.rhythmType,
-        b.rhythmType
+      value: percentSimilarity(
+        a.meaningUncertainty,
+        b.meaningUncertainty
       ),
       weight: 5
     },
 
-    // Ritmikai folyás
+    // Jelentéscsavar / torzulás
     {
-      value: textSimilarity(
-        a.rhythmFlow,
-        b.rhythmFlow
-      ),
-      weight: 5
-    },
-
-    // Ritmikai mozgás
-    {
-      value: textSimilarity(
-        a.rhythmMovement,
-        b.rhythmMovement
+      value: percentSimilarity(
+        a.meaningTwist,
+        b.meaningTwist
       ),
       weight: 4
     },
 
-    // Ritmikai törések
+    // Érthetőség
     {
-      value: textSimilarity(
-        a.rhythmBreaks,
-        b.rhythmBreaks
+      value: percentSimilarity(
+        a.understandability,
+        b.understandability
       ),
-      weight: 3
-    },
-
-    // Szervezőelv
-    {
-      value: textSimilarity(
-        a.organizingPrinciple,
-        b.organizingPrinciple
-      ),
-      weight: 2
-    },
-
-    // Fordulópont
-    {
-      value: textSimilarity(
-        a.turningPoint,
-        b.turningPoint
-      ),
-      weight: 1
+      weight: 5
     }
+
   ];
 
   const totalWeight =
