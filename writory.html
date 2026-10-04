@@ -251,6 +251,23 @@
     Kalibrációs JSON letöltése
   </button>
 </div>
+
+  <div class="card">
+  <h2>Aktuális vers ujjlenyomata</h2>
+
+  <div class="note">
+    Csak a jelenleg betöltött vers teljes mérési ujjlenyomatának mentése.
+    Az etalonverseket nem módosítja.
+  </div>
+
+  <button
+    type="button"
+    onclick="downloadCurrentFingerprint()"
+    style="margin-top:16px; margin-bottom:0;"
+  >
+    Aktuális ujjlenyomat JSON letöltése
+  </button>
+</div>
   <!-- ADATOK ELÉRHETŐSÉGE -->
   <div class="card">
     <h2>Elérhető mérési adatok</h2>
@@ -1910,6 +1927,67 @@ if (allScoresAvailable) {
 
   a.href = url;
   a.download = "writory-kalibracio-10-vers.json";
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+  function downloadCurrentFingerprint() {
+
+  if (!poem) {
+    alert("Nincs betöltött vers.");
+    return;
+  }
+
+  const currentExport = {
+    poem: poem,
+
+    measurements: data,
+
+    jsFingerprint: stablePoemFingerprint,
+
+    writoryFingerprints: {
+      creativity: getCreativityFingerprint(data),
+      emotion: getEmotionFingerprint(data),
+      structure: getStructureFingerprint(data),
+      language: getLanguageFingerprint(data)
+    },
+
+    writoryResult: {
+      creativity: creativityResult?.score ?? null,
+      emotion: emotionResult?.score ?? null,
+      structure: structureResult?.score ?? null,
+      language: languageResult?.score ?? null,
+      impact: impactResult,
+
+      total:
+        allScoresAvailable
+          ? categoryScores.reduce((sum, score) => sum + score, 0) + impactResult
+          : null
+    },
+
+    saved_at: new Date().toISOString()
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(currentExport, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[:.]/g, "-");
+
+  a.download =
+    "aktualis-vers-ujjlenyomat-" + stamp + ".json";
 
   document.body.appendChild(a);
   a.click();
