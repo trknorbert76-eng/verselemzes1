@@ -1341,6 +1341,9 @@ function getStructureFingerprint(measurements) {
     cohesionProblem:
       checkSeed.cohesion_problem_percent ?? null,
 
+    overreadingRisk:
+  checkSeed.overreading_risk_percent ?? null,
+
     meaningUncertainty:
       checkSeed.meaning_uncertainty_percent ?? null,
 
@@ -1467,6 +1470,14 @@ function structureSimilarity(a, b) {
       ),
       weight: 7
     },
+
+    {
+  similarity: percentSimilarity(
+    a.overreadingRisk,
+    b.overreadingRisk
+  ),
+  weight: 5
+},
 
     // Jelentés bizonytalansága
     {
