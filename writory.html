@@ -935,12 +935,7 @@ const jsSimilarity =
 // biztos önazonosítás.
 if (jsSimilarity === 100) {
   similarity = 100;
-} else {
-  // Idegen versnél csak kis korrekció.
-  similarity = Math.min(
-    99,
-    similarity + jsFingerprintBonus(jsSimilarity)
-  );
+
 }
 
  return {
@@ -1212,12 +1207,7 @@ const jsSimilarity =
 // biztos önazonosítás.
 if (jsSimilarity === 100) {
   similarity = 100;
-} else {
-  // Idegen versnél csak kis korrekció.
-  similarity = Math.min(
-    99,
-    similarity + jsFingerprintBonus(jsSimilarity)
-  );
+
 }
 
     return {
@@ -1424,11 +1414,7 @@ function calculateStructureScore() {
       // Pontosan ugyanaz az etalonvers
       if (jsSimilarity === 100) {
         similarity = 100;
-      } else {
-        similarity = Math.min(
-          99,
-          similarity + jsFingerprintBonus(jsSimilarity)
-        );
+     
       }
 
 return {
@@ -1703,12 +1689,7 @@ function calculateLanguageScore() {
       // biztos önazonosítás.
       if (jsSimilarity === 100) {
         similarity = 100;
-      } else {
-        // Idegen versnél csak kis korrekció.
-        similarity = Math.min(
-          99,
-          similarity + jsFingerprintBonus(jsSimilarity)
-        );
+   
       }
 
    return {
