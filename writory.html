@@ -857,43 +857,77 @@ testStableFingerprint();
 function creativitySimilarity(a, b) {
   if (!a || !b) return 0;
 
-  const parts = [
-    textSimilarity(a.imageOriginality, b.imageOriginality),
-    textSimilarity(a.voiceOriginality, b.voiceOriginality),
+  const weightedParts = [
+    {
+      value: textSimilarity(
+        a.imageOriginality,
+        b.imageOriginality
+      ),
+      weight: 18
+    },
 
-    numericSimilarity(
-      a.independentPoeticLife,
-      b.independentPoeticLife
-    ),
+    {
+      value: textSimilarity(
+        a.voiceOriginality,
+        b.voiceOriginality
+      ),
+      weight: 18
+    },
 
-    numericSimilarity(
-      a.concretePower,
-      b.concretePower
-    ),
+    {
+      value: numericSimilarity(
+        a.independentPoeticLife,
+        b.independentPoeticLife
+      ),
+      weight: 18
+    },
 
-    numericSimilarity(
-      a.compression,
-      b.compression
-    ),
+    {
+      value: numericSimilarity(
+        a.concretePower,
+        b.concretePower
+      ),
+      weight: 14
+    },
 
-    numericSimilarity(
-      a.emptyDepthRisk,
-      b.emptyDepthRisk
-    ),
+    {
+      value: numericSimilarity(
+        a.necessity,
+        b.necessity
+      ),
+      weight: 12
+    },
 
+    {
+      value: numericSimilarity(
+        a.textualSupport,
+        b.textualSupport
+      ),
+      weight: 10
+    },
 
-numericSimilarity(
-  a.necessity,
-  b.necessity
-)
-  
+    {
+      value: numericSimilarity(
+        a.resistanceToOverreading,
+        b.resistanceToOverreading
+      ),
+      weight: 10
+    }
   ];
 
-  const average =
-    parts.reduce((sum, value) => sum + value, 0) /
-    parts.length;
+  const totalWeight =
+    weightedParts.reduce(
+      (sum, part) => sum + part.weight,
+      0
+    );
 
-  return average * 100;
+  const weightedSimilarity =
+    weightedParts.reduce(
+      (sum, part) => sum + part.value * part.weight,
+      0
+    );
+
+  return (weightedSimilarity / totalWeight) * 100;
 }
 
 
