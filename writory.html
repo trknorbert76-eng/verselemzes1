@@ -1389,129 +1389,74 @@ function structureSimilarity(a, b) {
 
   const weightedParts = [
 
-    // Valódi szerkezeti változás
     {
-      value: textSimilarity(
-        a.changeDetected,
-        b.changeDetected
-      ),
+      value: textSimilarity(a.changeDetected, b.changeDetected),
       weight: 10
     },
 
-    // Bizonyított-e a változás
     {
-      value: textSimilarity(
-        a.changeProved,
-        b.changeProved
-      ),
+      value: textSimilarity(a.changeProved, b.changeProved),
       weight: 8
     },
 
-    // Szerkezeti ív típusa
     {
-      value: textSimilarity(
-        a.structureType,
-        b.structureType
-      ),
+      value: textSimilarity(a.structureType, b.structureType),
       weight: 12
     },
 
-    // Kohézió erőssége
     {
-      value: textSimilarity(
-        a.cohesionStrength,
-        b.cohesionStrength
-      ),
+      value: textSimilarity(a.cohesionStrength, b.cohesionStrength),
       weight: 8
     },
 
-    // Kohézió típusa
     {
-      value: textSimilarity(
-        a.cohesionType,
-        b.cohesionType
-      ),
+      value: textSimilarity(a.cohesionType, b.cohesionType),
       weight: 7
     },
 
-    // Szövegbeli alátámasztottság
     {
-      value: numericSimilarity(
-        a.textualSupport,
-        b.textualSupport
-      ),
+      value: numericSimilarity(a.textualSupport, b.textualSupport),
       weight: 8
     },
 
-    // Belső koherencia
     {
-      value: numericSimilarity(
-        a.coherence,
-        b.coherence
-      ),
+      value: numericSimilarity(a.coherence, b.coherence),
       weight: 10
     },
 
-    // Szükségszerűség
     {
-      value: numericSimilarity(
-        a.necessity,
-        b.necessity
-      ),
+      value: numericSimilarity(a.necessity, b.necessity),
       weight: 8
     },
 
-    // Szerkezeti feszesség
     {
-      value: numericSimilarity(
-        a.compression,
-        b.compression
-      ),
+      value: numericSimilarity(a.compression, b.compression),
       weight: 8
     },
 
-    // Kohéziós probléma
     {
-      value: percentSimilarity(
-        a.cohesionProblem,
-        b.cohesionProblem
-      ),
-      weight: 7
-    },
-
-    {
-  similarity: percentSimilarity(
-    a.overreadingRisk,
-    b.overreadingRisk
-  ),
-  weight: 5
-},
-
-    // Jelentés bizonytalansága
-    {
-      value: percentSimilarity(
-        a.meaningUncertainty,
-        b.meaningUncertainty
-      ),
+      value: percentSimilarity(a.cohesionProblem, b.cohesionProblem),
       weight: 5
     },
 
-    // Jelentéscsavar / torzulás
     {
-      value: percentSimilarity(
-        a.meaningTwist,
-        b.meaningTwist
-      ),
+      value: percentSimilarity(a.overreadingRisk, b.overreadingRisk),
+      weight: 5
+    },
+
+    {
+      value: percentSimilarity(a.meaningUncertainty, b.meaningUncertainty),
       weight: 4
     },
 
-    // Érthetőség
     {
-      value: percentSimilarity(
-        a.understandability,
-        b.understandability
-      ),
-      weight: 5
+      value: percentSimilarity(a.meaningTwist, b.meaningTwist),
+      weight: 3
+    },
+
+    {
+      value: percentSimilarity(a.understandability, b.understandability),
+      weight: 4
     }
 
   ];
