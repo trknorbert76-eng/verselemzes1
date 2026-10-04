@@ -1146,68 +1146,69 @@ function impactSimilarity(a, b) {
 function emotionSimilarity(a, b) {
   if (!a || !b) return 0;
 
-  const parts = [
+  const weightedParts = [
+    {
+      value: numericSimilarity(
+        Math.round(a.innerAuthenticity),
+        Math.round(b.innerAuthenticity)
+      ),
+      weight: 30
+    },
 
-    // A tizedes hitelességi értéket
-    // 1–10-es mérésként hasonlítjuk
+    {
+      value: numericSimilarity(
+        a.textualSupport,
+        b.textualSupport
+      ),
+      weight: 20
+    },
 
-  numericSimilarity(
-    Math.round(a.innerAuthenticity),
-    Math.round(b.innerAuthenticity)
-  ),
+    {
+      value: numericSimilarity(
+        a.necessity,
+        b.necessity
+      ),
+      weight: 15
+    },
 
-  numericSimilarity(
-    a.textualSupport,
-    b.textualSupport
-  ),
+    {
+      value: numericSimilarity(
+        a.resistanceToOverreading,
+        b.resistanceToOverreading
+      ),
+      weight: 15
+    },
 
-  numericSimilarity(
-    a.necessity,
-    b.necessity
-  ),
+    {
+      value: numericSimilarity(
+        a.emptyDepthRisk,
+        b.emptyDepthRisk
+      ),
+      weight: 10
+    },
 
-  numericSimilarity(
-    a.coherence,
-    b.coherence
-  ),
+    {
+      value: impactSimilarity(
+        a.impactScore,
+        b.impactScore
+      ),
+      weight: 10
+    }
+  ];
 
-  numericSimilarity(
-    a.resistanceToOverreading,
-    b.resistanceToOverreading
-  ),
+  const totalWeight =
+    weightedParts.reduce(
+      (sum, part) => sum + part.weight,
+      0
+    );
 
-  numericSimilarity(
-    a.concretePower,
-    b.concretePower
-  ),
+  const weightedSimilarity =
+    weightedParts.reduce(
+      (sum, part) => sum + part.value * part.weight,
+      0
+    );
 
-  numericSimilarity(
-    a.emptyDepthRisk,
-    b.emptyDepthRisk
-  ),
-
-  numericSimilarity(
-    a.compression,
-    b.compression
-  ),
-
-  numericSimilarity(
-    a.independentPoeticLife,
-    b.independentPoeticLife
-  ),
-
-  // 0–100-as Hatás
-  impactSimilarity(
-    a.impactScore,
-    b.impactScore
-  )
-];
-
-  const average =
-    parts.reduce((sum, value) => sum + value, 0) /
-    parts.length;
-
-  return average * 100;
+  return (weightedSimilarity / totalWeight) * 100;
 }
 
 
@@ -1246,11 +1247,14 @@ const jsSimilarity =
     sample.jsFingerprint
   );
 
-// Ha pontosan ugyanaz az etalonvers:
-// biztos önazonosítás.
 if (jsSimilarity === 100) {
   similarity = 100;
+} else {
+  similarity =
+    (similarity * 0.92) +
+    (jsSimilarity * 0.08);
 
+  similarity = Math.min(99, similarity);
 }
 
     return {
