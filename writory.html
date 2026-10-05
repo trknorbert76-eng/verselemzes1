@@ -753,6 +753,8 @@ function estimateNearbyWritoryScore(matches, maxGap = 3) {
 
   const best = matches[0];
 
+
+
   // Saját etalonvers: az eredeti Writory-pont marad.
   if (best.jsSimilarity === 100) {
     return best.score;
@@ -1001,14 +1003,14 @@ if (jsSimilarity === 100) {
   if (!best) return null;
 
 
-   // 80% alatt még nem adunk Writory-pontot.
-  if (best.similarity < 80) {
-    return {
-      score: null,
-      best: best,
-      matches: matches
-    };
-  }
+// 80% alatt a legközelebbi etalon pontját használjuk.
+if (best.similarity < 80) {
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
 
   return {
     score: estimateNearbyWritoryScore(matches),
@@ -1272,15 +1274,14 @@ if (jsSimilarity === 100) {
   if (!best) return null;
 
 
-  // Ugyanaz a 80%-os biztonsági küszöb,
-  // mint a Kreativitásnál.
-  if (best.similarity < 80) {
-    return {
-      score: null,
-      best: best,
-      matches: matches
-    };
-  }
+// 80% alatt a legközelebbi etalon pontját használjuk.
+if (best.similarity < 80) {
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
 
 
 return {
@@ -1532,15 +1533,14 @@ return {
 
   if (!best) return null;
 
-
-  // Ugyanaz a biztonsági küszöb
-  if (best.similarity < 80) {
-    return {
-      score: null,
-      best: best,
-      matches: matches
-    };
-  }
+// 80% alatt a legközelebbi etalon pontját használjuk.
+if (best.similarity < 80) {
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
 
 
 return {
@@ -1808,14 +1808,14 @@ function calculateLanguageScore() {
   if (!best) return null;
 
 
-  // Ugyanaz a 80%-os biztonsági küszöb
-  if (best.similarity < 80) {
-    return {
-      score: null,
-      best: best,
-      matches: matches
-    };
-  }
+// 80% alatt a legközelebbi etalon pontját használjuk.
+if (best.similarity < 80) {
+  return {
+    score: best.score,
+    best: best,
+    matches: matches
+  };
+}
 
 
  return {
