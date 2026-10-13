@@ -143,6 +143,7 @@
         grid-template-columns: 1fr;
       }
     }
+    .new-score { width:80px;box-sizing:border-box;padding:9px;margin-top:7px;background:#111;color:#eee;border:1px solid #555;border-radius:8px; }
   </style>
 </head>
 
@@ -235,12 +236,29 @@
 
   <div id="saveMessage" class="note"></div>
   <div id="savedCount" class="note"></div>
+  <div style="border-top:1px solid #444;margin-top:20px;padding-top:18px;">
+    <h3 style="color:#d6b36a;margin:0 0 10px;">Új Writory-etalon hozzáadása</h3>
+    <p class="note">A jelenleg betöltött, már kielemzett vershez írd be a címet és a <strong>valódi Writory-részpontszámokat</strong>. Egyetlen mentés hozzáadja az etalont és az ujjlenyomatát. Többé nem kell a HTML-t szerkeszteni.</p>
+    <label for="newTitle">Vers címe</label><br>
+    <input id="newTitle" type="text" placeholder="Például: sandcastles and sadcastles" style="box-sizing:border-box;width:100%;max-width:540px;padding:11px;margin:7px 0 14px;background:#111;color:#eee;border:1px solid #555;border-radius:8px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <label>Kreativitás /25<br><input id="newCreativity" type="number" min="0" max="25" step="1" class="new-score"></label>
+      <label>Érzelem /25<br><input id="newEmotion" type="number" min="0" max="25" step="1" class="new-score"></label>
+      <label>Szerkezet /20<br><input id="newStructure" type="number" min="0" max="20" step="1" class="new-score"></label>
+      <label>Nyelv /20<br><input id="newLanguage" type="number" min="0" max="20" step="1" class="new-score"></label>
+      <label>Hatás /10<br><input id="newImpact" type="number" min="0" max="10" step="1" class="new-score"></label>
+    </div>
+    <div id="newTotal" class="note">Összesen: — /100</div>
+    <button type="button" onclick="saveNewReferenceAndSample()" style="margin:12px 0 0;">+ Új etalon és aktuális mérés mentése</button>
+    <div id="newSaveMessage" class="note" role="status"></div>
+    <p class="note">Az etalonok ebben a böngészőben, ezen a webhelyen tárolódnak. A <strong>Kalibrációs JSON letöltése</strong> gombbal rendszeresen készíts biztonsági másolatot.</p>
+  </div>
 </div>
 <div class="card">
   <h2>Kalibráció exportálása</h2>
 
   <div class="note">
-    A 10 elmentett etalonvers teljes mérési ujjlenyomatának mentése.
+    Az elmentett etalonversek teljes mérési ujjlenyomatának mentése.
   </div>
 
   <button
@@ -488,7 +506,7 @@ document.getElementById("debugOutput").textContent =
 // WRITORY KALIBRÁCIÓS ETALONOK
 // ====================================================
 
-const WRITORY_REFERENCE = [
+const BUILTIN_WRITORY_REFERENCE = [
   { title:"Kik voltak", creativity:17, emotion:17, structure:14, language:13, impact:10, total:71 },
   { title:"Most legyél", creativity:15, emotion:16, structure:14, language:14, impact:10, total:69 },
   { title:"Küzdelem", creativity:15, emotion:16, structure:14, language:13, impact:10, total:68 },
@@ -499,9 +517,90 @@ const WRITORY_REFERENCE = [
   { title:"Szép vers", creativity:17, emotion:18, structure:15, language:14, impact:10, total:74 },
   { title:"Lélegzem", creativity:18, emotion:16, structure:15, language:15, impact:10, total:74 },
   { title:"Táncok a félelemmel", creativity:17, emotion:17, structure:15, language:14, impact:10, total:73 },
-  { title:"Gondolatok", creativity:16, emotion:16, structure:13, language:14, impact:10, total:69 }
+  { title:"Gondolatok", creativity:16, emotion:16, structure:13, language:14, impact:10, total:69 },
+  { title:"sandcastles and sadcastles", creativity:18, emotion:19, structure:16, language:16, impact:10, total:79 }
 ];
 
+
+// A további etalonok a böngésző localStorage-jában maradnak.
+const EXTRA_REFERENCE_KEY = "writory_extra_references_v1";
+function getExtraReferences() {
+  try {
+    const value = JSON.parse(localStorage.getItem(EXTRA_REFERENCE_KEY) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch { return []; }
+}
+const WRITORY_REFERENCE = [...BUILTIN_WRITORY_REFERENCE, ...getExtraReferences()];
+
+function saveNewReferenceAndSample() {
+  const msg = document.getElementById("newSaveMessage");
+  msg.style.color = "#ff7b7b";
+  const title = document.getElementById("newTitle").value.trim();
+  if (!title) { msg.textContent = "Add meg a vers címét."; return; }
+  if (!poem.trim()) { msg.textContent = "Nincs betöltött vers. Előbb futtasd le a verselemzést!"; return; }
+  const specs = [
+    ["newCreativity", "creativity", 25], ["newEmotion", "emotion", 25],
+    ["newStructure", "structure", 20], ["newLanguage", "language", 20],
+    ["newImpact", "impact", 10]
+  ];
+  const values = {};
+  for (const [id, key, max] of specs) {
+    const el = document.getElementById(id);
+    const n = Number(el.value);
+    if (el.value.trim() === "" || !Number.isInteger(n) || n < 0 || n > max) {
+      msg.textContent = "Hibás vagy hiányzó pontszám: " + key + " (0–" + max + ").";
+      return;
+    }
+    values[key] = n;
+  }
+  const total = Object.values(values).reduce((a,b) => a+b, 0);
+  const existing = WRITORY_REFERENCE.find(r => r.title.toLocaleLowerCase() === title.toLocaleLowerCase());
+  if (existing) {
+    msg.textContent = "Ez a cím már szerepel az etalonok között. A meglévő etalont a fenti listából válaszd ki, ha újra szeretnéd menteni.";
+    return;
+  }
+  if (!Object.values(data).some(Boolean)) { msg.textContent = "Nincsenek betöltött elemzési mérések."; return; }
+  if (!confirm("Az aktuálisan betöltött vershez mented az új etalont: „" + title + "” (" + total + "/100). Megfelelő vers van betöltve?")) return;
+  const reference = {title, ...values, total};
+  const sample = {
+    title,
+    writory: {...values, total},
+    poem,
+    measurements: data,
+    jsFingerprint: stablePoemFingerprint,
+    saved_at: new Date().toISOString()
+  };
+  try {
+    // Először az ujjlenyomatot mentjük, utána a referenciajegyzéket.
+    const samples = getCalibrationSamples();
+    samples.push(sample);
+    setCalibrationSamples(samples);
+    const extras = getExtraReferences();
+    extras.push(reference);
+    localStorage.setItem(EXTRA_REFERENCE_KEY, JSON.stringify(extras));
+    WRITORY_REFERENCE.push(reference);
+    const option = document.createElement("option");
+    option.value = WRITORY_REFERENCE.length - 1;
+    option.textContent = title;
+    referenceSelect.appendChild(option);
+    referenceSelect.value = String(WRITORY_REFERENCE.length - 1);
+    showReferenceScore();
+    updateSavedCount();
+    msg.style.color = "#7edb8a";
+    msg.textContent = "✓ Elmentve: " + title + " — " + total + "/100. Az új etalon a következő betöltéstől részt vesz a becslésben.";
+  } catch (e) {
+    msg.textContent = "Nem sikerült menteni: " + e.message;
+  }
+}
+
+for (const id of ["newCreativity","newEmotion","newStructure","newLanguage","newImpact"]) {
+  document.getElementById(id).addEventListener("input", () => {
+    const ids = ["newCreativity","newEmotion","newStructure","newLanguage","newImpact"];
+    const valid = ids.every(x => document.getElementById(x).value.trim() !== "");
+    const total = ids.reduce((sum,x) => sum + Number(document.getElementById(x).value || 0), 0);
+    document.getElementById("newTotal").textContent = "Összesen: " + (valid ? total : "—") + " /100";
+  });
+}
 
 // ====================================================
 // TÁROLÁS
@@ -1926,7 +2025,7 @@ if (allScoresAvailable) {
   const a = document.createElement("a");
 
   a.href = url;
-  a.download = "writory-kalibracio-10-vers.json";
+  a.download = "writory-kalibracio-etalonok.json";
 
   document.body.appendChild(a);
   a.click();
