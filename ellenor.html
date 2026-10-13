@@ -187,6 +187,15 @@ button.secondary,
     max-height: none;
   }
 }
+
+/* A cím külseje változatlan, billentyűzettel is használható. */
+#poemTranslationToggle { padding:0; border:0; border-radius:0; background:none; color:inherit; font:inherit; text-align:left; }
+#poemTranslationToggle:focus-visible { outline:2px solid #f0c66c; outline-offset:4px; }
+#poemTranslationToggle:disabled { cursor:wait; }
+#translationStatus { color:#bbb; font-size:0.9rem; margin:0 0 10px; }
+#translationAccess { background:#171717; color:#eee; border:1px solid #d6b36a; border-radius:12px; max-width:360px; }
+#translationAccess::backdrop { background:#0009; }
+#translationAccess input { box-sizing:border-box; width:100%; margin:12px 0; padding:10px; }
 </style>
 </head>
 <body>
@@ -206,7 +215,8 @@ button.secondary,
 
   <div class="grid-top">
     <section class="card">
-      <h2>A vizsgált vers</h2>
+      <h2><button type="button" id="poemTranslationToggle" aria-controls="poemBox" aria-pressed="false">A vizsgált vers</button></h2>
+      <div id="translationStatus" role="status" aria-live="polite" hidden></div>
       <div id="poemBox" class="poem-box"></div>
 
       <div class="mini-card" style="margin-top:12px;">
@@ -387,6 +397,17 @@ button.secondary,
   </div>
 </div>
 
+
+<dialog id="translationAccess" aria-labelledby="translationAccessTitle">
+  <form method="dialog">
+    <h3 id="translationAccessTitle">Saját műfordítás</h3>
+    <label for="translationKey">Műfordítási hozzáférési kulcs</label>
+    <input id="translationKey" type="password" autocomplete="off" required>
+    <button value="start">Műfordítás</button>
+    <button value="cancel" class="secondary" formnovalidate>Mégse</button>
+  </form>
+</dialog>
+
 <script>
 const params = new URLSearchParams(window.location.search);
 const autorun = params.get("autorun") === "1";
@@ -441,7 +462,7 @@ function fillView() {
   const seedCheck = unwrapPack(readJSON("analysis_check_seed")) || null;
   const finalCheck = unwrapPack(readJSON("analysis_check")) || null;
 
-  setText("poemBox", poem, poemFallback);
+  renderPoemTranslation(poem);
 
   setText("kindMainType", kind.main_type);
   setText("kindMood", kind.mood);
@@ -635,6 +656,114 @@ async function runCheckAnalysis(forceRefresh = false) {
     showNotice("Hiba történt az ellenőrzés során: " + (err.message || "ismeretlen hiba"));
   }
 }
+
+// Beállítás: a telepített műfordító Worker teljes HTTPS-címe.
+const TRANSLATION_WORKER_URL = "";
+const translationButton = document.getElementById("poemTranslationToggle");
+const translationStatus = document.getElementById("translationStatus");
+const translationDialog = document.getElementById("translationAccess");
+const translationKeyInput = document.getElementById("translationKey");
+let translationAccessKey = ""; // Csak memóriában, nem localStorage-ban.
+let translationBusy = false;
+let showingTranslation = false;
+let translationOriginal = "";
+let translationText = "";
+const translationCacheKey = "poem_hu_literary_translation_v1";
+
+function translationMessage(message) {
+  translationStatus.textContent = message;
+  translationStatus.hidden = !message;
+}
+
+function renderPoemTranslation(poem) {
+  if (poem !== translationOriginal) {
+    translationOriginal = poem;
+    translationText = "";
+    showingTranslation = false;
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(translationCacheKey) || "null");
+      if (cached?.poem === poem && typeof cached.translation === "string") {
+        translationText = cached.translation;
+      }
+    } catch { /* Sérült vagy nem elérhető gyorsítótár nélkül is működik. */ }
+    translationMessage("");
+  }
+  document.getElementById("poemBox").textContent = showingTranslation ? translationText : poem;
+  translationButton.textContent = showingTranslation ? "A vizsgált vers – magyar műfordítás" : "A vizsgált vers";
+  translationButton.setAttribute("aria-pressed", String(showingTranslation));
+}
+
+function askTranslationKey() {
+  return new Promise(resolve => {
+    translationDialog.returnValue = "cancel";
+    translationKeyInput.value = "";
+    translationDialog.addEventListener("close", () => {
+      const key = translationDialog.returnValue === "start" ? translationKeyInput.value.trim() : "";
+      translationKeyInput.value = "";
+      resolve(key);
+    }, { once:true });
+    translationDialog.showModal();
+    translationKeyInput.focus();
+  });
+}
+
+translationButton.addEventListener("click", async () => {
+  if (translationBusy) return;
+  const poem = sessionStorage.getItem("poemText") || sessionStorage.getItem("poem");
+  if (!poem?.trim()) { translationMessage("Nincs betöltött vers."); return; }
+  renderPoemTranslation(poem);
+  if (translationText) {
+    showingTranslation = !showingTranslation;
+    renderPoemTranslation(poem);
+    document.getElementById("poemBox").scrollTop = 0;
+    translationMessage("");
+    return;
+  }
+  if (!TRANSLATION_WORKER_URL.startsWith("https://")) {
+    translationMessage("A műfordító Worker címe még nincs beállítva.");
+    return;
+  }
+  translationBusy = true;
+  translationButton.disabled = true;
+  let timer;
+  try {
+    if (!translationAccessKey) translationAccessKey = await askTranslationKey();
+    if (!translationAccessKey) return;
+    translationMessage("Készül a magyar műfordítás…");
+    const controller = new AbortController();
+    timer = setTimeout(() => controller.abort(), 150000);
+    const response = await fetch(TRANSLATION_WORKER_URL, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "Authorization":"Bearer " + translationAccessKey },
+      body:JSON.stringify({ poem }),
+      signal:controller.signal
+    });
+    if (response.status === 401) translationAccessKey = "";
+    const data = await response.json();
+    if (!response.ok || !data.ok || typeof data.translation !== "string" || !data.translation.trim()) {
+      throw new Error(data.error || "Nem készült el a műfordítás.");
+    }
+    // Későn érkező válasz ne cserélhessen le egy másik verset.
+    const current = sessionStorage.getItem("poemText") || sessionStorage.getItem("poem");
+    if (current !== poem) { renderPoemTranslation(current || poemFallback); return; }
+    translationText = data.translation.trim();
+    try {
+      sessionStorage.setItem(translationCacheKey, JSON.stringify({poem, translation:translationText}));
+    } catch { /* A megjelenítés tárolási hiba esetén is működjön. */ }
+    showingTranslation = true;
+    renderPoemTranslation(poem);
+    document.getElementById("poemBox").scrollTop = 0;
+    translationMessage("");
+  } catch (error) {
+    translationMessage(error.name === "AbortError"
+      ? "A műfordítás várakozási ideje lejárt. Az eredeti vers megmaradt; kattintással újrapróbálhatod."
+      : (error.message || "Nem sikerült a műfordítás. Kattintással újrapróbálhatod."));
+  } finally {
+    clearTimeout(timer);
+    translationBusy = false;
+    translationButton.disabled = false;
+  }
+});
 
 // Egyszeri indítás az oldal betöltésekor
 runCheckAnalysis(false);
