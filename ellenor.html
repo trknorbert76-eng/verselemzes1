@@ -195,7 +195,8 @@ button.secondary,
 #translationStatus { color:#bbb; font-size:0.9rem; margin:0 0 10px; }
 #translationAccess { background:#171717; color:#eee; border:1px solid #d6b36a; border-radius:12px; max-width:360px; }
 #translationAccess::backdrop { background:#0009; }
-#translationAccess input { box-sizing:border-box; width:100%; margin:12px 0; padding:10px; }
+#translationAccess input[type="password"] { box-sizing:border-box; width:100%; margin:12px 0; padding:10px; }
+#translationAccess .remember-label { display:block; margin-bottom:14px; }
 </style>
 </head>
 <body>
@@ -403,6 +404,7 @@ button.secondary,
     <h3 id="translationAccessTitle">Saját műfordítás</h3>
     <label for="translationKey">Műfordítási hozzáférési kulcs</label>
     <input id="translationKey" type="password" autocomplete="off" required>
+    <label class="remember-label"><input id="translationRemember" type="checkbox"> Megjegyzés ezen az eszközön</label>
     <button value="start">Műfordítás</button>
     <button value="cancel" class="secondary" formnovalidate>Mégse</button>
   </form>
@@ -663,7 +665,14 @@ const translationButton = document.getElementById("poemTranslationToggle");
 const translationStatus = document.getElementById("translationStatus");
 const translationDialog = document.getElementById("translationAccess");
 const translationKeyInput = document.getElementById("translationKey");
-let translationAccessKey = ""; // Csak memóriában, nem localStorage-ban.
+const translationRemember = document.getElementById("translationRemember");
+const translationAccessStorageKey = "muforditas_access_key_v1";
+let translationAccessKey = "";
+let rememberTranslationAccess = false;
+try {
+  translationAccessKey = localStorage.getItem(translationAccessStorageKey) || "";
+  rememberTranslationAccess = !!translationAccessKey;
+} catch { /* Tiltott tároló esetén csak memóriában jegyezzük meg. */ }
 let translationBusy = false;
 let showingTranslation = false;
 let translationOriginal = "";
@@ -697,8 +706,10 @@ function askTranslationKey() {
   return new Promise(resolve => {
     translationDialog.returnValue = "cancel";
     translationKeyInput.value = "";
+    translationRemember.checked = rememberTranslationAccess;
     translationDialog.addEventListener("close", () => {
       const key = translationDialog.returnValue === "start" ? translationKeyInput.value.trim() : "";
+      if (key) rememberTranslationAccess = translationRemember.checked;
       translationKeyInput.value = "";
       resolve(key);
     }, { once:true });
@@ -738,11 +749,20 @@ translationButton.addEventListener("click", async () => {
       body:JSON.stringify({ poem }),
       signal:controller.signal
     });
-    if (response.status === 401) translationAccessKey = "";
+    if (response.status === 401) {
+      translationAccessKey = "";
+      try { localStorage.removeItem(translationAccessStorageKey); } catch {}
+    }
     const data = await response.json();
     if (!response.ok || !data.ok || typeof data.translation !== "string" || !data.translation.trim()) {
       throw new Error(data.error || "Nem készült el a műfordítás.");
     }
+    // Csak sikeresen ellenőrzött kulcsot mentünk, kifejezett kérésre.
+    let accessStorageFailed = false;
+    try {
+      if (rememberTranslationAccess) localStorage.setItem(translationAccessStorageKey, translationAccessKey);
+      else localStorage.removeItem(translationAccessStorageKey);
+    } catch { accessStorageFailed = rememberTranslationAccess; }
     // Későn érkező válasz ne cserélhessen le egy másik verset.
     const current = sessionStorage.getItem("poemText") || sessionStorage.getItem("poem");
     if (current !== poem) { renderPoemTranslation(current || poemFallback); return; }
@@ -753,7 +773,7 @@ translationButton.addEventListener("click", async () => {
     showingTranslation = true;
     renderPoemTranslation(poem);
     document.getElementById("poemBox").scrollTop = 0;
-    translationMessage("");
+    translationMessage(accessStorageFailed ? "A műfordítás elkészült, de a böngésző nem engedi a jelszó megjegyzését." : "");
   } catch (error) {
     translationMessage(error.name === "AbortError"
       ? "A műfordítás várakozási ideje lejárt. Az eredeti vers megmaradt; kattintással újrapróbálhatod."
