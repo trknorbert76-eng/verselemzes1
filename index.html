@@ -389,6 +389,21 @@ font-family: "Courier New", monospace;
 
  
 
+
+/* Különálló, jelszóval védett költségpanel */
+#adminCostsWrap { display:none; margin: 0 0 20px; border:1px solid #5c4b29; border-radius:12px; background:#1b1b1b; padding:12px 14px; }
+#adminCostsWrap summary { cursor:pointer; color:#d6b36a; font-weight:bold; font-size:1rem; }
+#adminCostsWrap .costBody { padding-top:14px; }
+#adminCostsWrap .costLogin { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+#adminCostsWrap input { min-width:180px; flex:1; max-width:330px; padding:11px; box-sizing:border-box; background:#111; color:#eee; border:1px solid #666; border-radius:8px; font-size:1rem; }
+#adminCostsWrap button { padding:10px 14px; font-size:.92rem; }
+#adminCostsWrap .costGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; margin:12px 0; }
+#adminCostsWrap .costTile { padding:12px; background:#242424; border:1px solid #383838; border-radius:10px; }
+#adminCostsWrap .costTile small { display:block; color:#bbb; margin-bottom:7px; }
+#adminCostsWrap .costTile strong { font-size:1.35rem; color:#e5c781; font-variant-numeric:tabular-nums; }
+#adminCostsWrap .costMessage { color:#cbbd99; font-size:.88rem; line-height:1.5; margin-top:10px; white-space:pre-wrap; }
+#adminCostsWrap .costActions { display:flex; gap:8px; flex-wrap:wrap; }
+@media (max-width:760px) { #adminCostsWrap .costLogin input { max-width:100%; width:100%; } }
 </style>
 <script src="https://www.paypal.com/sdk/js?client-id=ATv3HcCUxMF87pPERJ-Jgz7lE4UVNztdcWSSwUaAJCoy2UU5rNF8gvpOG1y9DyvulMP0u08yctYOzIZi&currency=EUR&intent=capture"></script>
    
@@ -420,6 +435,26 @@ font-family: "Courier New", monospace;
   <div id="userTopBox"></div>
 
 </div>
+
+
+<!-- A költségpanel külön működik a verselemzőtől. Az adatokhoz Worker-token szükséges. -->
+<details id="adminCostsWrap">
+  <summary>💶 OpenAI költségeim – admin</summary>
+  <div class="costBody">
+    <div id="adminCostLogin" class="costLogin">
+      <input id="adminCostPassword" type="password" autocomplete="current-password" placeholder="Költségpanel jelszava" aria-label="Költségpanel jelszava">
+      <button type="button" id="adminCostLoginBtn">Belépés</button>
+    </div>
+    <div id="adminCostData" hidden>
+      <div class="costGrid" id="adminCostGrid"></div>
+      <div class="costActions">
+        <button type="button" id="adminCostRefreshBtn">↻ Frissítés</button>
+        <button type="button" id="adminCostLogoutBtn" class="secondary">Költségpanel kijelentkezés</button>
+      </div>
+    </div>
+    <div class="costMessage" id="adminCostMessage" role="status"></div>
+  </div>
+</details>
 
 <div id="buyWrap">
 <button id="buyBtn" class="goldAction smallBuyBtn">
@@ -2813,6 +2848,125 @@ setInterval(() => {
   updateCheckStatus();
   updateSummaryStatus();
 }, 500);
+</script>
+
+<script>
+/* Önálló admin költségpanel; a meglévő elemzési logikát nem módosítja. */
+(() => {
+  'use strict';
+  const API = 'https://verselemzo-koltseg.trknorbert76.workers.dev';
+  const TOKEN_KEY = 'verselemzo_admin_cost_session_v1';
+  const ADMIN_EMAIL = 'trknorbert76@gmail.com';
+  const panel = document.getElementById('adminCostsWrap');
+  const loginBox = document.getElementById('adminCostLogin');
+  const dataBox = document.getElementById('adminCostData');
+  const passwordInput = document.getElementById('adminCostPassword');
+  const loginButton = document.getElementById('adminCostLoginBtn');
+  const refreshButton = document.getElementById('adminCostRefreshBtn');
+  const logoutButton = document.getElementById('adminCostLogoutBtn');
+  const grid = document.getElementById('adminCostGrid');
+  const message = document.getElementById('adminCostMessage');
+  const mark = document.getElementById('editorMark');
+
+  // Csak megjelenítési feltétel. A tényleges jogosultságot a Worker ellenőrzi.
+  function updateVisibility() {
+    const email = (localStorage.getItem('user_email') || '').trim().toLowerCase();
+    const editorUnlocked = mark && getComputedStyle(mark).display !== 'none';
+    panel.style.display = (email === ADMIN_EMAIL || editorUnlocked) ? 'block' : 'none';
+  }
+  updateVisibility();
+  if (mark) new MutationObserver(updateVisibility).observe(mark, { attributes:true, attributeFilter:['style'] });
+  window.addEventListener('storage', updateVisibility);
+
+  const fmt = new Intl.NumberFormat('hu-HU', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:4 });
+  function setMessage(value) { message.textContent = value || ''; }
+  function showLogin() { loginBox.hidden = false; dataBox.hidden = true; }
+  function showData() { loginBox.hidden = true; dataBox.hidden = false; }
+  function clearSession() { localStorage.removeItem(TOKEN_KEY); showLogin(); }
+
+  async function call(action, extra = {}, token = '') {
+    const headers = { 'Content-Type':'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch(API, { method:'POST', headers, body:JSON.stringify({ action, ...extra }), cache:'no-store' });
+    let data;
+    try { data = await res.json(); } catch { throw new Error('A költségfigyelő nem adott értelmezhető választ.'); }
+    if (!res.ok || !data.ok) {
+      const error = new Error(data.error || 'Nem sikerült lekérni az adatokat.');
+      error.status = res.status;
+      throw error;
+    }
+    return data;
+  }
+
+  function renderCosts(data) {
+    const c = data.costs || {};
+    const items = [
+      ['Ma', c.today],
+      ['Tegnap', c.yesterday],
+      ['Utolsó 7 nap', c.last_7_days],
+      ['Aktuális hónap', c.current_month],
+      ['Előző hónap', c.previous_month],
+      ['Összesen', c.all_time]
+    ];
+    grid.replaceChildren();
+    for (const [label, value] of items) {
+      const tile = document.createElement('div');
+      tile.className = 'costTile';
+      const caption = document.createElement('small');
+      caption.textContent = label;
+      const amount = document.createElement('strong');
+      amount.textContent = typeof value === 'number' && Number.isFinite(value) ? fmt.format(value) : '—';
+      tile.append(caption, amount);
+      grid.append(tile);
+    }
+    const rate = Number(data.exchange_rate);
+    const rateText = Number.isFinite(rate) ? `Árfolyam: 1 USD = ${rate.toFixed(4)} EUR. ` : '';
+    setMessage(rateText + 'Az összegek tájékoztató jellegűek; az OpenAI adatai késhetnek. Az összesített érték akkor jelenik meg, ha a Worker is támogatja. A napi OpenAI-bontás UTC-alapú.');
+  }
+
+  async function loadCosts() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { showLogin(); return; }
+    refreshButton.disabled = true;
+    setMessage('Költségadatok lekérése…');
+    try {
+      const data = await call('costs', {}, token);
+      showData();
+      renderCosts(data);
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        clearSession();
+        setMessage('A belépés lejárt. Add meg újra a jelszót.');
+      } else {
+        showData();
+        setMessage('Hiba: ' + err.message);
+      }
+    } finally { refreshButton.disabled = false; }
+  }
+
+  async function login() {
+    const password = passwordInput.value;
+    if (!password) { setMessage('Írd be a jelszót.'); return; }
+    loginButton.disabled = true;
+    setMessage('Belépés ellenőrzése…');
+    try {
+      const result = await call('login', { password });
+      localStorage.setItem(TOKEN_KEY, result.token);
+      passwordInput.value = '';
+      await loadCosts();
+    } catch (err) { setMessage('Belépési hiba: ' + err.message); }
+    finally { loginButton.disabled = false; }
+  }
+
+  loginButton.addEventListener('click', login);
+  passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  refreshButton.addEventListener('click', loadCosts);
+  logoutButton.addEventListener('click', () => { clearSession(); setMessage('Kijelentkeztél a költségpanelből.'); });
+  panel.addEventListener('toggle', () => {
+    if (panel.open && localStorage.getItem(TOKEN_KEY)) loadCosts();
+  });
+  if (localStorage.getItem(TOKEN_KEY)) { showData(); } else { showLogin(); }
+})();
 </script>
 </body>
 </html>
