@@ -2878,7 +2878,7 @@ setInterval(() => {
   if (mark) new MutationObserver(updateVisibility).observe(mark, { attributes:true, attributeFilter:['style'] });
   window.addEventListener('storage', updateVisibility);
 
-  const fmt = new Intl.NumberFormat('hu-HU', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:4 });
+  const fmt = new Intl.NumberFormat('hu-HU', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 });
   function setMessage(value) { message.textContent = value || ''; }
   function showLogin() { loginBox.hidden = false; dataBox.hidden = true; }
   function showData() { loginBox.hidden = true; dataBox.hidden = false; }
@@ -2906,7 +2906,7 @@ setInterval(() => {
       ['Utolsó 7 nap', c.last_7_days],
       ['Aktuális hónap', c.current_month],
       ['Előző hónap', c.previous_month],
-      ['Összesen', c.all_time]
+      ['Összesen (2026.01.01-től)', c.all_time]
     ];
     grid.replaceChildren();
     for (const [label, value] of items) {
@@ -2921,7 +2921,7 @@ setInterval(() => {
     }
     const rate = Number(data.exchange_rate);
     const rateText = Number.isFinite(rate) ? `Árfolyam: 1 USD = ${rate.toFixed(4)} EUR. ` : '';
-    setMessage(rateText + 'Az összegek tájékoztató jellegűek; az OpenAI adatai késhetnek. Az összesített érték akkor jelenik meg, ha a Worker is támogatja. A napi OpenAI-bontás UTC-alapú.');
+    setMessage(rateText + 'Az összegek tájékoztató jellegűek; az OpenAI adatai késhetnek. A napi OpenAI-bontás UTC-alapú. Az összesítés 2026. január 1-jétől, az elérhető adatokból készül.');
   }
 
   async function loadCosts() {
@@ -2932,7 +2932,19 @@ setInterval(() => {
     try {
       const data = await call('costs', {}, token);
       showData();
+      // Az öt időszakot azonnal megjelenítjük, majd külön lekérjük az összesítést.
       renderCosts(data);
+      try {
+        const totalData = await call('total_costs', {}, token);
+        if (typeof totalData.total === 'number' && Number.isFinite(totalData.total)) {
+          data.costs = { ...(data.costs || {}), all_time: totalData.total };
+          renderCosts(data);
+        } else {
+          setMessage('Az összesített költség nem érkezett meg.');
+        }
+      } catch (totalError) {
+        setMessage('A napi és havi költségek megjelentek, de az összesítés nem sikerült: ' + totalError.message);
+      }
     } catch (err) {
       if (err.status === 401 || err.status === 403) {
         clearSession();
