@@ -286,6 +286,18 @@
     Aktuális ujjlenyomat JSON letöltése
   </button>
 </div>
+
+<div class="card" id="looCard">
+ <h2>🔬 Kalibráció ellenőrzése – egy etalon kihagyásával</h2>
+ <p class="note">A kiválasztott verset a számítás idejére kizárjuk, és a többi elmentett ujjlenyomat alapján becsüljük meg a Writory-pontjait. Semmit nem töröl vagy módosít.</p>
+ <label for="looSelect">Vizsgált etalon:</label><br>
+ <select id="looSelect" style="width:100%;max-width:470px;padding:11px;margin:9px 0;background:#111;color:#eee;border:1px solid #555;border-radius:8px"></select><br>
+ <button type="button" id="looOne">Kiválasztott vers tesztelése</button>
+ <button type="button" id="looAll">Összes etalon tesztelése</button>
+ <div id="looResult" style="overflow-x:auto;line-height:1.65"></div>
+ <p class="note">A Hatás a jelenlegi kalibrátorban rögzített 10/10, nem becsült érték. A teszt pontosan ezt a működést követi.</p>
+</div>
+
   <!-- ADATOK ELÉRHETŐSÉGE -->
   <div class="card">
     <h2>Elérhető mérési adatok</h2>
@@ -2094,6 +2106,100 @@ if (allScoresAvailable) {
 
   URL.revokeObjectURL(url);
 }
+
+// ====================================================
+// LEAVE-ONE-OUT: KALIBRÁCIÓS ELLENŐRZÉS, MENTÉS NÉLKÜL
+// ====================================================
+const looSelect = document.getElementById("looSelect");
+const looResult = document.getElementById("looResult");
+const looFields = [
+  ["Kreativitás", "creativity", 25, getCreativityFingerprint, creativitySimilarity],
+  ["Érzelem", "emotion", 25, getEmotionFingerprint, emotionSimilarity],
+  ["Szerkezet", "structure", 20, getStructureFingerprint, structureSimilarity],
+  ["Nyelvezet", "language", 20, getLanguageFingerprint, languageSimilarity]
+];
+function looEscape(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function looSamples() {
+  return getCalibrationSamples().filter(s => s && s.title && s.writory && s.measurements);
+}
+function looRefresh() {
+  const previous = looSelect.value;
+  const samples = looSamples();
+  looSelect.replaceChildren();
+  for (const s of samples) {
+    const opt = document.createElement('option');
+    opt.value = s.title;
+    opt.textContent = s.title + ' (' + s.writory.total + '/100)';
+    looSelect.appendChild(opt);
+  }
+  if (samples.some(s => s.title === previous)) looSelect.value = previous;
+  else if (samples.some(s => s.title === 'A kalapos ember')) looSelect.value = 'A kalapos ember';
+}
+function looPredict(target, pool) {
+  const out = {};
+  for (const [label, key, max, extract, compare] of looFields) {
+    const current = extract(target.measurements);
+    const matches = pool.map(s => {
+      let similarity = compare(current, extract(s.measurements));
+      const jsSimilarity = jsFingerprintSimilarity(target.jsFingerprint, s.jsFingerprint);
+      if (jsSimilarity === 100) similarity = 100;
+      return {title:s.title, similarity, jsSimilarity, score:s.writory[key]};
+    }).sort((a,b) => b.similarity - a.similarity);
+    const best = matches[0];
+    out[key] = {
+      score: best ? (best.similarity < 80 ? best.score : estimateNearbyWritoryScore(matches)) : null,
+      best: best || null,
+      matches
+    };
+  }
+  out.impact = {score:10, best:null};
+  out.total = looFields.reduce((sum, [,key]) => sum + (out[key].score ?? 0), 10);
+  return out;
+}
+function looRunOne() {
+  const samples = looSamples();
+  const target = samples.find(s => s.title === looSelect.value);
+  if (!target) { looResult.textContent = 'Nincs kiválasztott, mentett etalon.'; return; }
+  const pool = samples.filter(s => s.title !== target.title);
+  if (!pool.length) { looResult.textContent = 'Legalább két mentett etalon szükséges.'; return; }
+  const result = looPredict(target, pool);
+  const rows = [...looFields.map(([label,key,max]) => [label,key,max]), ['Hatás','impact',10]];
+  const tdStyle = 'style="padding:8px 12px;border-bottom:1px solid #444;text-align:right"';
+  let html = '<h3>' + looEscape(target.title) + '</h3><p>Vizsgált vers kizárva · <strong>' + pool.length + '</strong> további etalon alapján</p>';
+  html += '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left">Kategória</th><th>Eredeti Writory</th><th>Becsült</th><th>Eltérés</th><th>Legközelebbi etalon (egyezés)</th></tr></thead><tbody>';
+  for (const [label,key,max] of rows) {
+    const original = target.writory[key];
+    const estimated = result[key].score;
+    const delta = estimated - original;
+    const best = result[key].best;
+    html += '<tr><td style="padding:8px;border-bottom:1px solid #444">'+looEscape(label)+'</td>'+
+      '<td '+tdStyle+'>'+original+'/'+max+'</td><td '+tdStyle+'>'+estimated+'/'+max+'</td>'+
+      '<td '+tdStyle+'>'+(delta>0?'+':'')+delta+'</td>'+
+      '<td style="padding:8px;border-bottom:1px solid #444">'+(best?looEscape(best.title)+' ('+best.similarity.toFixed(1)+'%)':'Rögzített 10/10')+'</td></tr>';
+  }
+  const diff = result.total-target.writory.total;
+  html += '<tr style="font-weight:bold;color:#d6b36a"><td>ÖSSZESEN</td><td '+tdStyle+'>'+target.writory.total+'/100</td><td '+tdStyle+'>'+result.total+'/100</td><td '+tdStyle+'>'+(diff>0?'+':'')+diff+'</td><td></td></tr></tbody></table>';
+  looResult.innerHTML = html;
+}
+function looRunAll() {
+  const samples = looSamples();
+  if (samples.length < 2) { looResult.textContent = 'Legalább két mentett etalon szükséges.'; return; }
+  const results = samples.map(target => {
+    const predicted = looPredict(target, samples.filter(s => s.title !== target.title));
+    return {title:target.title, actual:target.writory.total, estimated:predicted.total, diff:predicted.total-target.writory.total};
+  });
+  const mae = results.reduce((sum,r) => sum + Math.abs(r.diff), 0)/results.length;
+  let html = '<h3>Összes etalon külön-külön kihagyva</h3><p>Átlagos abszolút eltérés: <strong>'+mae.toFixed(2)+' pont</strong> · '+samples.length+' vizsgált vers · minden tesztnél '+(samples.length-1)+' referencia.</p>';
+  html += '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left">Vers</th><th>Valódi</th><th>Becsült</th><th>Eltérés</th></tr></thead><tbody>';
+  for (const r of results) html += '<tr><td style="padding:7px;border-bottom:1px solid #444">'+looEscape(r.title)+'</td><td>'+r.actual+'</td><td>'+r.estimated+'</td><td>'+(r.diff>0?'+':'')+r.diff+'</td></tr>';
+  looResult.innerHTML = html + '</tbody></table>';
+}
+document.getElementById('looOne').addEventListener('click', looRunOne);
+document.getElementById('looAll').addEventListener('click', looRunAll);
+looRefresh();
+
 </script>
 
 </body>
