@@ -294,6 +294,15 @@
       </div>
     </div>
 
+    <div class="card" id="languageQualityCard" style="display:none; margin-top:20px;">
+      <h2>Nyelvi működés – V2</h2>
+      <div class="mainType" id="languageScore">—</div>
+      <div class="valueBox" id="languageParts">—</div>
+      <div class="miniTitle" style="margin-top:18px;">Bizonyított nyelvi rendellenességek</div>
+      <div id="languageIssues" class="noteBox">—</div>
+      <div class="noteBox">A nyelvi pontszám egyelőre önálló mérés; a végső Ellenőr pontszámát nem módosítja.</div>
+    </div>
+
     <div class="previousBox" id="previousBox" style="display:none;">
       <h2>Az előző lépések eredménye</h2>
 
@@ -489,6 +498,25 @@
 
       overallExpressionEl.textContent = result?.overall_expression || "Nincs megadva";
       reasoningEl.textContent = result?.reasoning || "Nincs indoklás.";
+
+      const q = result?.language_quality;
+      const qCard = document.getElementById("languageQualityCard");
+      if (q && q.version === "expression-v2") {
+        qCard.style.display = "block";
+        document.getElementById("languageScore").textContent =
+          Number.isFinite(q.score) ? `${q.score}/100 pont` : "A pontozás nem teljes";
+        document.getElementById("languageParts").textContent =
+          `Mondatszerkezet: ${q.syntax ?? "—"}/100\n` +
+          `Jelentésbeli pontosság: ${q.semantic_precision ?? "—"}/100\n` +
+          `Világosság: ${q.clarity ?? "—"}/100\n` +
+          `Következetesség: ${q.consistency ?? "—"}/100`;
+        const issues = Array.isArray(q.issues) ? q.issues : [];
+        document.getElementById("languageIssues").textContent = issues.length
+          ? issues.map((x,i) => `${i+1}. „${x.text}”\n${x.type} (${x.severity})\n${x.reason}\nEllenpróba: ${x.poetic_countercheck}`).join("\n\n")
+          : "Nem talált bizonyítható nyelvi rendellenességet.";
+      } else {
+        qCard.style.display = "none";
+      }
 
       resultLayout.style.display = "grid";
       
