@@ -305,6 +305,13 @@
       <div class="noteBox">A nyelvi pontszám egyelőre önálló mérés; a végső Ellenőr pontszámát nem módosítja.</div>
     </div>
 
+    <div class="card" id="meaningCard" style="display:none; margin-top:20px;">
+      <h2>Jelentésteremtő szövegrészek – V4</h2>
+      <div id="meaningResults" class="noteBox">—</div>
+    </div>
+    <div class="loadingBox" id="newWorkerLoading"></div>
+    <div class="errorBox" id="newWorkerError"></div>
+
     <div class="previousBox" id="previousBox" style="display:none;">
       <h2>Az előző lépések eredménye</h2>
 
@@ -391,6 +398,8 @@
 
     const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
     const NEXT_PAGE = "melyseg.html";
+    const LANGUAGE_WORKER_URL = "https://verskritika-nyelvi-v2.trknorbert76.workers.dev/";
+    const NEW_CACHE_KEY = "analysis_language_v2_meaning_v4";
 
     const params = new URLSearchParams(window.location.search);
     const autorun = params.get("autorun") === "1";
@@ -501,43 +510,73 @@
       overallExpressionEl.textContent = result?.overall_expression || "Nincs megadva";
       reasoningEl.textContent = result?.reasoning || "Nincs indoklás.";
 
+             // A régi Kifejezésmód kizárólag a saját eredményét rajzolja ki.
+resultLayout.style.display = "grid";
+      
+    }
+
+    function renderNewResults(result) {
       const q = result?.language_quality;
       const qCard = document.getElementById("languageQualityCard");
-      if (q && q.version === "expression-v2") {
-        qCard.style.display = "block";
-        document.getElementById("languageScore").textContent =
-          Number.isFinite(q.score) ? `${q.score}/100 pont` : "A pontozás nem teljes";
+      qCard.style.display = q ? "block" : "none";
+      if (q) {
+        document.getElementById("languageScore").textContent = `${q.score ?? "—"}/100 pont`;
         document.getElementById("languageParts").textContent =
-          `Mondatszerkezet: ${q.syntax ?? "—"}/100\n` +
+          `Mondatszerkezet: ${q.sentence_structure ?? "—"}/100\n` +
           `Jelentésbeli pontosság: ${q.semantic_precision ?? "—"}/100\n` +
           `Világosság: ${q.clarity ?? "—"}/100\n` +
           `Következetesség: ${q.consistency ?? "—"}/100`;
-        const passages = Array.isArray(q.meaningful_passages) ? q.meaningful_passages : [];
-        const categoryNames = {
-          K1:"Jellemző mozdulat", K2:"Visszatérő részlet (K8)",
-          K3:"Következmény / nyom (K9)", K4:"Kimondatlan érzés",
-          K5:"Idő / távolság / észlelés", K6:"Kapcsolatot mutató gesztus",
-          K7:"Írás / beszéd / emlékezés"
-        };
-        document.getElementById("languageBestSentences").textContent = passages.length
-          ? passages.map((x, i) =>
-              `${i+1}. [${categoryNames[x.category] || x.category}]\n„${x.text}”` +
-              (x.connection_quote ? `\nKapcsolódó részlet: „${x.connection_quote}”` : "") +
-              `\nSzövegbeli bizonyíték: ${x.evidence}` +
-              `\nJelentéstöbblet: ${x.added_meaning}` +
-              `\nEllenpróba: ${x.countercheck}`
-            ).join("\n\n")
-          : "Nem érkezett igazolt jelentésteremtő kapcsolat. Ez nem jelenti azt, hogy a versben nincs ilyen részlet.";
+        const best = Array.isArray(q.best_sentences) ? q.best_sentences : [];
+        document.getElementById("languageBestSentences").textContent = best.length
+          ? best.map((x, i) => `${i + 1}. „${x}”`).join("\n\n")
+          : "Nincs kiemelt mondat.";
         const issues = Array.isArray(q.issues) ? q.issues : [];
         document.getElementById("languageIssues").textContent = issues.length
-          ? issues.map((x,i) => `${i+1}. „${x.text}”\n${x.type} (${x.severity})\n${x.reason}\nEllenpróba: ${x.poetic_countercheck}`).join("\n\n")
+          ? issues.map((x, i) => `${i + 1}. „${x.quote}”\n${x.type}: ${x.reason}`).join("\n\n")
           : "Nem talált bizonyítható nyelvi rendellenességet.";
-      } else {
-        qCard.style.display = "none";
       }
+      const passages = result?.meaningful_passages;
+      const card = document.getElementById("meaningCard");
+      card.style.display = Array.isArray(passages) ? "block" : "none";
+      if (Array.isArray(passages)) {
+        const names = {K1:"Jellemző mozdulat", K8:"Visszatérő részlet", K9:"Következmény / nyom",
+          K4:"Kimondatlan érzés", K5:"Idő / távolság / észlelés", K6:"Kapcsolatot mutató gesztus", K7:"Írás / beszéd / emlékezés"};
+        document.getElementById("meaningResults").textContent = passages.length
+          ? passages.map((x, i) => `${i + 1}. [${(x.categories || []).map(k => names[k] || k).join(", ")}] (${x.start_line}–${x.end_line}. sor)\n„${x.quote}”\n` +
+              `Kapcsolódó részlet: ${(x.support_quotes || []).map(y => `„${y.quote}”`).join("; ") || "—"}\n` +
+              `Jelentéstöbblet: ${x.added_meaning}\nBizonyíték: ${x.evidence}`).join("\n\n")
+          : "Nem talált igazolható jelentésteremtő kapcsolatot.";
+      }
+    }
 
-      resultLayout.style.display = "grid";
-      
+    async function runNewAnalysis(poem, forceRefresh = false) {
+      const loading = document.getElementById("newWorkerLoading");
+      const error = document.getElementById("newWorkerError");
+      error.style.display = "none";
+      const cached = getStoredPack(NEW_CACHE_KEY);
+      if (!forceRefresh && cached?.poem === poem && cached?.result?.language_quality && Array.isArray(cached?.result?.meaningful_passages)) {
+        renderNewResults(cached.result);
+        return;
+      }
+      loading.textContent = "Nyelvi működés – V2 és jelentésteremtő szövegrészek – V4 elemzése folyamatban...";
+      loading.style.display = "block";
+      try {
+        const res = await fetch(LANGUAGE_WORKER_URL, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({poem, step:"all"})
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Az új Worker hibát jelzett.");
+        if (!data.result?.language_quality || !Array.isArray(data.result?.meaningful_passages))
+          throw new Error("Hiányos válasz érkezett az új Workertől.");
+        sessionStorage.setItem(NEW_CACHE_KEY, JSON.stringify({poem, result:data.result}));
+        renderNewResults(data.result);
+      } catch (e) {
+        error.textContent = "Az új elemzés nem készült el: " + (e.message || e);
+        error.style.display = "block";
+      } finally {
+        loading.style.display = "none";
+      }
     }
 
     async function runExpressionAnalysis(forceRefresh = false) {
@@ -594,6 +633,7 @@
     hideInfo();
 
     renderResult(savedExpression);
+    runNewAnalysis(poem, forceRefresh);
     sessionStorage.setItem("step_expression_done", Date.now().toString());
     showInfo("A korábbi kifejezésmód-eredmény betöltve.");
 
