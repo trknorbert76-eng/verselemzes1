@@ -662,4 +662,22 @@ topNextBtn.disabled = true;
       summaryBtn.disabled = false;
 backBtn.disabled = false;
 topNextBtn.disabled = false;
-   
+      }
+    }
+
+    backBtn.addEventListener("click", () => {
+      window.location.href = "kepek.html";
+    });
+
+ summaryBtn.addEventListener("click", () => {
+  window.location.href = "osszegzes.html";
+});
+
+topNextBtn.addEventListener("click", () => {
+  window.location.href = NEXT_PAGE;
+});
+
+    runExpressionAnalysis(false);
+  </script>
+</body>
+</html>
