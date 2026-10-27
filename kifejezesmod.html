@@ -298,7 +298,7 @@
       <h2>Nyelvi működés – V2</h2>
       <div class="mainType" id="languageScore">—</div>
       <div class="valueBox" id="languageParts">—</div>
-      <div class="miniTitle" style="margin-top:18px;">Legjobban működő mondatok (legfeljebb 10)</div>
+      <div class="miniTitle" style="margin-top:18px;">Jelentésteremtő szövegrészek – felismert kapcsolatok</div>
       <div id="languageBestSentences" class="noteBox">—</div>
       <div class="miniTitle" style="margin-top:18px;">Bizonyított nyelvi rendellenességek</div>
       <div id="languageIssues" class="noteBox">—</div>
@@ -512,16 +512,22 @@
           `Jelentésbeli pontosság: ${q.semantic_precision ?? "—"}/100\n` +
           `Világosság: ${q.clarity ?? "—"}/100\n` +
           `Következetesség: ${q.consistency ?? "—"}/100`;
-        const best = Array.isArray(q.best_sentences) ? q.best_sentences : [];
-        const criterionNames = {
-          syntax: "Mondatszerkezet",
-          semantic_precision: "Jelentésbeli pontosság",
-          clarity: "Világosság",
-          consistency: "Következetesség"
+        const passages = Array.isArray(q.meaningful_passages) ? q.meaningful_passages : [];
+        const categoryNames = {
+          K1:"Jellemző mozdulat", K2:"Visszatérő részlet (K8)",
+          K3:"Következmény / nyom (K9)", K4:"Kimondatlan érzés",
+          K5:"Idő / távolság / észlelés", K6:"Kapcsolatot mutató gesztus",
+          K7:"Írás / beszéd / emlékezés"
         };
-        document.getElementById("languageBestSentences").textContent = best.length
-          ? best.map((x, i) => `${i + 1}. „${x.text}”\n${criterionNames[x.criterion] || "Nyelvi működés"}: ${x.reason}`).join("\n\n")
-          : "Nem érkezett ellenőrizhető, szó szerinti kiemelt mondat. Ez nem jelenti azt, hogy a versben nincs jól működő megfogalmazás.";
+        document.getElementById("languageBestSentences").textContent = passages.length
+          ? passages.map((x, i) =>
+              `${i+1}. [${categoryNames[x.category] || x.category}]\n„${x.text}”` +
+              (x.connection_quote ? `\nKapcsolódó részlet: „${x.connection_quote}”` : "") +
+              `\nSzövegbeli bizonyíték: ${x.evidence}` +
+              `\nJelentéstöbblet: ${x.added_meaning}` +
+              `\nEllenpróba: ${x.countercheck}`
+            ).join("\n\n")
+          : "Nem érkezett igazolt jelentésteremtő kapcsolat. Ez nem jelenti azt, hogy a versben nincs ilyen részlet.";
         const issues = Array.isArray(q.issues) ? q.issues : [];
         document.getElementById("languageIssues").textContent = issues.length
           ? issues.map((x,i) => `${i+1}. „${x.text}”\n${x.type} (${x.severity})\n${x.reason}\nEllenpróba: ${x.poetic_countercheck}`).join("\n\n")
@@ -656,22 +662,4 @@ topNextBtn.disabled = true;
       summaryBtn.disabled = false;
 backBtn.disabled = false;
 topNextBtn.disabled = false;
-      }
-    }
-
-    backBtn.addEventListener("click", () => {
-      window.location.href = "kepek.html";
-    });
-
- summaryBtn.addEventListener("click", () => {
-  window.location.href = "osszegzes.html";
-});
-
-topNextBtn.addEventListener("click", () => {
-  window.location.href = NEXT_PAGE;
-});
-
-    runExpressionAnalysis(false);
-  </script>
-</body>
-</html>
+   
