@@ -298,6 +298,8 @@
       <h2>Nyelvi működés – V2</h2>
       <div class="mainType" id="languageScore">—</div>
       <div class="valueBox" id="languageParts">—</div>
+      <div class="miniTitle" style="margin-top:18px;">Legjobban működő mondatok (legfeljebb 10)</div>
+      <div id="languageBestSentences" class="noteBox">—</div>
       <div class="miniTitle" style="margin-top:18px;">Bizonyított nyelvi rendellenességek</div>
       <div id="languageIssues" class="noteBox">—</div>
       <div class="noteBox">A nyelvi pontszám egyelőre önálló mérés; a végső Ellenőr pontszámát nem módosítja.</div>
@@ -510,6 +512,16 @@
           `Jelentésbeli pontosság: ${q.semantic_precision ?? "—"}/100\n` +
           `Világosság: ${q.clarity ?? "—"}/100\n` +
           `Következetesség: ${q.consistency ?? "—"}/100`;
+        const best = Array.isArray(q.best_sentences) ? q.best_sentences : [];
+        const criterionNames = {
+          syntax: "Mondatszerkezet",
+          semantic_precision: "Jelentésbeli pontosság",
+          clarity: "Világosság",
+          consistency: "Következetesség"
+        };
+        document.getElementById("languageBestSentences").textContent = best.length
+          ? best.map((x, i) => `${i + 1}. „${x.text}”\n${criterionNames[x.criterion] || "Nyelvi működés"}: ${x.reason}`).join("\n\n")
+          : "Nem érkezett ellenőrizhető, szó szerinti kiemelt mondat. Ez nem jelenti azt, hogy a versben nincs jól működő megfogalmazás.";
         const issues = Array.isArray(q.issues) ? q.issues : [];
         document.getElementById("languageIssues").textContent = issues.length
           ? issues.map((x,i) => `${i+1}. „${x.text}”\n${x.type} (${x.severity})\n${x.reason}\nEllenpróba: ${x.poetic_countercheck}`).join("\n\n")
