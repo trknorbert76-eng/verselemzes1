@@ -125,6 +125,9 @@ button.next {
   line-height: 1.6;
 }
 
+ .evidence { margin-top: 10px; border-left: 3px solid #bd6b64; padding: 8px 12px; background: #251b1b; line-height: 1.5; white-space: pre-wrap; }
+ .evidence q { color: #f2b0a8; font-weight: bold; }
+ .evidence .warning { color: #f0c27b; }
 .summaryBox {
   display: none;
   margin-top: 22px;
@@ -181,7 +184,7 @@ button.next {
   <h1>Belső mérés</h1>
 
   <p class="intro">
-    Ez az oldal a vers finomabb belső költészeti mércéit mutatja: jelenlét, átalakulás, memorabilitás, kockázat, nyelvi zeneiség, sűrűség, csend és tét.
+    A vers nyolc belső működési szempontját vizsgálja. Az 5 pont alatti értékelésekhez szövegbeli bizonyítékot kérünk.
   </p>
 
 <div class="topbar">
@@ -198,49 +201,49 @@ button.next {
   <div class="grid" id="resultGrid">
 
     <div class="card">
-      <h2>Jelenlét / hitelesség</h2>
+      <h2>Szövegbeli alátámasztottság</h2>
       <div class="score" id="presenceScore">—</div>
       <div class="reason" id="presenceReason">—</div>
     </div>
 
     <div class="card">
-      <h2>Átalakulás intenzitása</h2>
+      <h2>Belső szükségszerűség</h2>
       <div class="score" id="transformationScore">—</div>
       <div class="reason" id="transformationReason">—</div>
     </div>
 
     <div class="card">
-      <h2>Memorabilitás</h2>
+      <h2>Belső koherencia</h2>
       <div class="score" id="memorabilityScore">—</div>
       <div class="reason" id="memorabilityReason">—</div>
     </div>
 
     <div class="card">
-      <h2>Költői kockázat</h2>
+      <h2>Túlértelmezés-ellenállás</h2>
       <div class="score" id="riskScore">—</div>
       <div class="reason" id="riskReason">—</div>
     </div>
 
     <div class="card">
-      <h2>Nyelvi zeneiség</h2>
+      <h2>Konkrét költői erő</h2>
       <div class="score" id="musicalityScore">—</div>
       <div class="reason" id="musicalityReason">—</div>
     </div>
 
     <div class="card">
-      <h2>Sűrűség / rétegzettség</h2>
+      <h2>Álmélység kockázata (magas = kisebb kockázat)</h2>
       <div class="score" id="densityScore">—</div>
       <div class="reason" id="densityReason">—</div>
     </div>
 
     <div class="card">
-      <h2>Csend / kimondatlanság</h2>
+      <h2>Sűrítés és fegyelem</h2>
       <div class="score" id="silenceScore">—</div>
       <div class="reason" id="silenceReason">—</div>
     </div>
 
     <div class="card">
-      <h2>Tét</h2>
+      <h2>Önálló költői élet</h2>
       <div class="score" id="stakesScore">—</div>
       <div class="reason" id="stakesReason">—</div>
     </div>
@@ -347,11 +350,36 @@ function getReason(data, fallbackReason) {
 }
 
 function setBlock(name, data, fallbackScore, fallbackReason) {
-  document.getElementById(name + "Score").textContent =
-    getScoreText(data, fallbackScore);
-
-  document.getElementById(name + "Reason").textContent =
-    getReason(data, fallbackReason);
+  const scoreEl = document.getElementById(name + "Score");
+  const reasonEl = document.getElementById(name + "Reason");
+  scoreEl.textContent = getScoreText(data, fallbackScore);
+  reasonEl.textContent = getReason(data, fallbackReason);
+  const score = Number(data && typeof data === "object" ? data.score : fallbackScore);
+  if (!Number.isFinite(score) || score >= 5) return;
+  const evidence = Array.isArray(data?.evidence) ? data.evidence : [];
+  const box = document.createElement("div");
+  box.className = "evidence";
+  if (!evidence.length) {
+    const warn = document.createElement("div");
+    warn.className = "warning";
+    warn.textContent = "⚠ Az 5 pont alatti értékeléshez nincs konkrét szövegbeli bizonyíték. A kritika nem igazolt.";
+    box.appendChild(warn);
+  } else {
+    evidence.forEach((e, i) => {
+      const line = document.createElement("div");
+      const q = document.createElement("q");
+      q.textContent = e.quote || "(hiányzó idézet)";
+      line.appendChild(q);
+      line.appendChild(document.createTextNode(" — " + (e.problem || "Nincs részletes indoklás.")));
+      if (e.related_quote) {
+        const related = document.createElement("div");
+        related.textContent = "Kapcsolódó sor: „" + e.related_quote + "”";
+        line.appendChild(related);
+      }
+      box.appendChild(line);
+    });
+  }
+  reasonEl.appendChild(box);
 }
 
 function renderResult(result) {
