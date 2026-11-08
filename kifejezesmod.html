@@ -622,21 +622,25 @@ resultLayout.style.display = "grid";
     function showPreparedV2V4(poem) {
       const cached = getStoredPack(NEW_CACHE_KEY);
       const error = document.getElementById("newWorkerError");
-      document.getElementById("newWorkerLoading").style.display = "none";
-      if (cached?.poem === poem && cached.result) {
-        renderNewResults(cached.result);
-      } else {
-        renderNewResults({});
-        error.textContent = "A V2/V4 eredménye még nem készült el az indexen. Indíts teljes elemzést az indexről.";
-        error.style.display = "block";
-        return;
-      }
-      const problems = sessionStorage.getItem("analysis_language_v2_v4_errors");
-      if (problems) {
-        error.textContent = "V2/V4 részleges hiba az indexen: " + problems;
-        error.style.display = "block";
-      } else error.style.display = "none";
+      const loading = document.getElementById("newWorkerLoading");
+      const result = cached?.poem === poem ? (cached.result || {}) : {};
+      renderNewResults(result);
+      let states = {};
+      try { states = JSON.parse(sessionStorage.getItem("analysis_language_v2_v4_status") || "{}"); } catch {}
+      const missing = [];
+      if (!result.language_quality) missing.push("V2: " + (states.language?.status === "error" ? "hiba – " + (states.language.detail || "ismeretlen") : states.language?.status === "running" ? "még dolgozik" : "nem indult vagy nincs eredmény"));
+      if (!Array.isArray(result.meaningful_passages)) missing.push("V4: " + (states.meaning?.status === "error" ? "hiba – " + (states.meaning.detail || "ismeretlen") : states.meaning?.status === "running" ? "még dolgozik" : "nem indult vagy nincs eredmény"));
+      loading.style.display = missing.some(x => x.includes("még dolgozik")) ? "block" : "none";
+      loading.textContent = "A V2/V4 vizsgálat még folyamatban van. Az indexen futó elemzés befejezéséig várj.";
+      error.style.display = missing.length && loading.style.display === "none" ? "block" : "none";
+      error.textContent = missing.join("\n");
+      return missing.length === 0;
     }
+    // Másik lapról visszatérve a részben kész V2/V4 eredmény is frissüljön.
+    setInterval(() => {
+      const poem = sessionStorage.getItem("poem");
+      if (poem) showPreparedV2V4(poem);
+    }, 2000);
 
     async function runExpressionAnalysis(forceRefresh = false) {
       const poem = sessionStorage.getItem("poem");
