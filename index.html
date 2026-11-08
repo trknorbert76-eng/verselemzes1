@@ -645,9 +645,56 @@ function findCompressionInfo(pack) {
 // V4 a vers ellenőrzése után rögtön indul; V2 kizárólag a belső mérés kész eredményére vár.
 // A két kérés egymástól független: egyik időtúllépése nem késlelteti a másikat.
 let languageMeaningRunId = 0;
+const V2V4_STATUS_KEY = "analysis_language_v2_v4_status";
+function getV2V4Status() {
+  try { return JSON.parse(sessionStorage.getItem(V2V4_STATUS_KEY) || "{}"); } catch { return {}; }
+}
+function setV2V4Status(step, status, detail = "") {
+  const current = getV2V4Status();
+  current[step] = {status, detail, updated: Date.now()};
+  sessionStorage.setItem(V2V4_STATUS_KEY, JSON.stringify(current));
+  updateExpressionCombinedUi();
+}
+function expressionComplete() {
+  const poem = sessionStorage.getItem("poem");
+  let cache = {};
+  try { cache = JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch {}
+  return !!sessionStorage.getItem("step_expression_done") && cache.poem === poem &&
+    !!cache.result?.language_quality && Array.isArray(cache.result?.meaningful_passages);
+}
+function updateExpressionCombinedUi() {
+  const step = pipeline?.find?.(s => s.key === "expression");
+  if (!step) return;
+  const btn = document.getElementById(step.buttonId);
+  const box = document.getElementById(step.boxId);
+  const note = document.getElementById(step.noteId);
+  if (!btn || !box || !note) return;
+  if (expressionComplete()) {
+    setStepDone(step);
+    return;
+  }
+  const original = !!sessionStorage.getItem("step_expression_done");
+  const statuses = getV2V4Status();
+  if (!original && !statuses.language && !statuses.meaning) return;
+  const missing = [];
+  if (!original) missing.push("eredeti Kifejezésmód");
+  const cache = (() => { try { return JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch { return {}; } })();
+  if (!cache.result?.language_quality || cache.poem !== sessionStorage.getItem("poem")) missing.push("V2");
+  if (!Array.isArray(cache.result?.meaningful_passages) || cache.poem !== sessionStorage.getItem("poem")) missing.push("V4");
+  const failed = ["language", "meaning"].filter(k => statuses[k]?.status === "error").map(k => k === "language" ? "V2" : "V4");
+  btn.disabled = true;
+  btn.classList.remove("done"); btn.classList.add("loading");
+  box.classList.remove("done", "real"); box.classList.add("loading");
+  const fill = box.querySelector(".progressFill");
+  if (fill) { fill.style.transition = "width .4s ease"; fill.style.width = original ? "85%" : "55%"; }
+  btn.textContent = failed.length ? "Kifejezésmód – V2/V4 hiba" : "Kifejezésmód folyamatban";
+  note.textContent = failed.length ? "Hibás: " + failed.join(", ") + ". Részletek a Kifejezésmód oldalon." : "Még vár: " + missing.join(", ") + ".";
+}
+
 function startLanguageMeaningTask(poem, step, compression = null, runId = languageMeaningRunId) {
   const key = step === "language" ? "language_quality" : "meaningful_passages";
   const label = step === "language" ? "V2" : "V4";
+  setV2V4Status(step, "running");
   appendRunnerInfo(label + " elindult a háttérben.");
   return (async () => {
     try {
@@ -675,6 +722,7 @@ function startLanguageMeaningTask(poem, step, compression = null, runId = langua
       const otherError = sessionStorage.getItem("analysis_language_" + (step === "language" ? "meaning" : "language") + "_error");
       if (otherError) sessionStorage.setItem("analysis_language_v2_v4_errors", otherError);
       else sessionStorage.removeItem("analysis_language_v2_v4_errors");
+      setV2V4Status(step, "done");
       appendRunnerInfo(label + " elkészült.");
       return data.result[key];
     } catch (e) {
@@ -683,6 +731,7 @@ function startLanguageMeaningTask(poem, step, compression = null, runId = langua
       sessionStorage.setItem("analysis_language_" + step + "_error", message);
       const otherError = sessionStorage.getItem("analysis_language_" + (step === "language" ? "meaning" : "language") + "_error");
       sessionStorage.setItem("analysis_language_v2_v4_errors", [message, otherError].filter(Boolean).join("; "));
+      setV2V4Status(step, "error", message);
       appendRunnerInfo(label + " hiba: " + message);
       return null; // A fő elemzési láncot nem állítjuk le.
     }
@@ -696,7 +745,10 @@ function startLanguageWhenInnerReady(poem, innerPromise, runId) {
     appendRunnerInfo("Belső mérés kész; V2 azonnal indul" + (compression ? " (sűrítés: " + compression.score + "/10)." : " (sűrítési adat nem található)."));
     return startLanguageMeaningTask(poem, "language", compression, runId);
   }).catch(e => {
-    if (runId === languageMeaningRunId) appendRunnerInfo("V2 nem indult: a belső mérés sikertelen (" + String(e.message || e) + ").");
+    if (runId === languageMeaningRunId) {
+      setV2V4Status("language", "error", String(e.message || e));
+      appendRunnerInfo("V2 nem indult: a belső mérés sikertelen (" + String(e.message || e) + ").");
+    }
     return null;
   });
 }
@@ -1368,6 +1420,7 @@ function setStepLoading(step) {
 
 
 function setStepDone(step) {
+  if (step.key === "expression" && !expressionComplete()) { updateExpressionCombinedUi(); return; }
   const btn = document.getElementById(step.buttonId);
   const box = document.getElementById(step.boxId);
   const note = document.getElementById(step.noteId);
@@ -1396,6 +1449,7 @@ btn.onclick = () => {
 function clearStepStorage() {
   languageMeaningRunId++;
   sessionStorage.removeItem(LANGUAGE_CACHE_KEY);
+  sessionStorage.removeItem(V2V4_STATUS_KEY);
   sessionStorage.removeItem("analysis_language_v2_v4_errors");
   sessionStorage.removeItem("analysis_language_language_error");
   sessionStorage.removeItem("analysis_language_meaning_error");
@@ -2265,7 +2319,8 @@ async function runStepWithUi(step, task) {
 
   try {
     const result = await task();
-    setStepDone(step);
+    if (step.key === "expression") updateExpressionCombinedUi();
+    else setStepDone(step);
     appendRunnerInfo(step.doneText + ".");
     return result;
   } catch (err) {
@@ -2915,10 +2970,12 @@ updateSummaryStatus();
 
   pipeline.forEach(step => {
     if (sessionStorage.getItem(step.doneKey)) {
-      setStepDone(step);
+      if (step.key === "expression") updateExpressionCombinedUi();
+      else setStepDone(step);
     }
   });
 
+  updateExpressionCombinedUi();
   updateCheckStatus();
   updateDepthStatus();
   updateDepthProgress();
