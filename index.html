@@ -613,6 +613,72 @@ const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
 const DEPTH_WORKER_URL = "https://melyseg-depth-public.trknorbert76.workers.dev";
 const IMPACT_WORKER_URL = "https://hatas-depth-public.trknorbert76.workers.dev";
 const INTERPRETATION_WORKER_URL = "https://ertelmezes-public.trknorbert76.workers.dev";
+const LANGUAGE_WORKER_URL = "https://verskritika-nyelvi-v2.trknorbert76.workers.dev/";
+const LANGUAGE_CACHE_KEY = "analysis_language_v2_meaning_v4";
+
+// A V2 és V4 már az indexen elkészül, a kifejezésmód csak megjeleníti őket.
+function findCompressionInfo(pack) {
+  const root = pack?.result || pack;
+  const visited = new Set();
+  function walk(obj, depth = 0) {
+    if (!obj || typeof obj !== "object" || depth > 7 || visited.has(obj)) return null;
+    visited.add(obj);
+    for (const [key, value] of Object.entries(obj)) {
+      const label = String(key).toLowerCase();
+      if (/(sűrítés|surites|compression)/i.test(label)) {
+        if (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 10) return {score:value};
+        if (value && typeof value === "object") {
+          const n = Number(value.score ?? value.value ?? value.rating ?? value.pont);
+          if (Number.isInteger(n) && n >= 1 && n <= 10) return {score:n, evidence: value.evidence || value.quote || ""};
+        }
+      }
+    }
+    for (const value of Object.values(obj)) {
+      const found = walk(value, depth + 1);
+      if (found) return found;
+    }
+    return null;
+  }
+  return walk(root);
+}
+
+async function startLanguageAndMeaning(poem, innerPromise) {
+  const inner = await innerPromise;
+  const compression = findCompressionInfo(inner);
+  const result = {};
+  const problems = [];
+  const steps = [{step:"language", key:"language_quality"}, {step:"meaning", key:"meaningful_passages"}];
+  for (const task of steps) {
+    try {
+      const payload = {poem, step:task.step};
+      if (task.step === "language" && compression) {
+        payload.compression_score = compression.score;
+        // A Worker az idézetet külön ellenőrzi; nem gyártunk bizonyítékot.
+        if (compression.evidence) payload.compression_evidence = compression.evidence;
+      }
+      const response = await fetch(LANGUAGE_WORKER_URL, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok || data.result?.[task.key] == null) {
+        throw new Error(data?.errors?.[task.step] || data?.error || "Hiányzó eredmény");
+      }
+      result[task.key] = data.result[task.key];
+      sessionStorage.setItem(LANGUAGE_CACHE_KEY, JSON.stringify({poem, result}));
+    } catch (e) {
+      problems.push(task.step + ": " + String(e.message || e));
+    }
+  }
+  if (problems.length) {
+    sessionStorage.setItem("analysis_language_v2_v4_errors", problems.join("; "));
+    appendRunnerInfo("V2/V4 részleges hiba: " + problems.join("; "));
+  } else {
+    sessionStorage.removeItem("analysis_language_v2_v4_errors");
+    appendRunnerInfo("V2 és V4 elkészült az indexen.");
+  }
+  return result;
+}
+
 const INNER_WORKER_URL = "https://belsomeres-public.trknorbert76.workers.dev";
  const WOLKER_WORKER_URL = "https://wolker-ai-filter.trknorbert76.workers.dev";
  const FINAL_SUMMARY_WORKER_URL = "https://osszegzes-public.trknorbert76.workers.dev";
@@ -2589,6 +2655,7 @@ const basePrevious = {
    const depthPromise = startDepthAnalysis(poem);
 
 const innerPromise = startInnerMeasure(poem, kind);
+const languageMeaningPromise = startLanguageAndMeaning(poem, innerPromise);
 
    const wolkerPromise = startWolkerAnalysis(poem);
 
@@ -2654,7 +2721,8 @@ const [
   expression,
   depth,
   impact,
-  wolker
+  wolker,
+  languageMeaning
 ] = await Promise.all([
   interpretationPromise,
   innerPromise,
@@ -2664,7 +2732,8 @@ const [
   expressionPromise,
   depthPromise,
   impactPromise,
-  wolkerPromise
+  wolkerPromise,
+  languageMeaningPromise
 ]);
 
     updateDepthStatus();
