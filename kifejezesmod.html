@@ -619,6 +619,25 @@ resultLayout.style.display = "grid";
       }
     }
 
+    function showPreparedV2V4(poem) {
+      const cached = getStoredPack(NEW_CACHE_KEY);
+      const error = document.getElementById("newWorkerError");
+      document.getElementById("newWorkerLoading").style.display = "none";
+      if (cached?.poem === poem && cached.result) {
+        renderNewResults(cached.result);
+      } else {
+        renderNewResults({});
+        error.textContent = "A V2/V4 eredménye még nem készült el az indexen. Indíts teljes elemzést az indexről.";
+        error.style.display = "block";
+        return;
+      }
+      const problems = sessionStorage.getItem("analysis_language_v2_v4_errors");
+      if (problems) {
+        error.textContent = "V2/V4 részleges hiba az indexen: " + problems;
+        error.style.display = "block";
+      } else error.style.display = "none";
+    }
+
     async function runExpressionAnalysis(forceRefresh = false) {
       const poem = sessionStorage.getItem("poem");
       const kindPack = getStoredPack("analysis_kind");
@@ -673,7 +692,7 @@ resultLayout.style.display = "grid";
     hideInfo();
 
     renderResult(savedExpression);
-    runNewAnalysis(poem, forceRefresh);
+    showPreparedV2V4(poem);
     sessionStorage.setItem("step_expression_done", Date.now().toString());
     showInfo("A korábbi kifejezésmód-eredmény betöltve.");
 
