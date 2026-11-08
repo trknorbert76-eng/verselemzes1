@@ -642,41 +642,63 @@ function findCompressionInfo(pack) {
   return walk(root);
 }
 
-async function startLanguageAndMeaning(poem, innerPromise) {
-  const inner = await innerPromise;
-  const compression = findCompressionInfo(inner);
-  const result = {};
-  const problems = [];
-  const steps = [{step:"language", key:"language_quality"}, {step:"meaning", key:"meaningful_passages"}];
-  for (const task of steps) {
+// V4 a vers ellenőrzése után rögtön indul; V2 kizárólag a belső mérés kész eredményére vár.
+// A két kérés egymástól független: egyik időtúllépése nem késlelteti a másikat.
+let languageMeaningRunId = 0;
+function startLanguageMeaningTask(poem, step, compression = null, runId = languageMeaningRunId) {
+  const key = step === "language" ? "language_quality" : "meaningful_passages";
+  const label = step === "language" ? "V2" : "V4";
+  appendRunnerInfo(label + " elindult a háttérben.");
+  return (async () => {
     try {
-      const payload = {poem, step:task.step};
-      if (task.step === "language" && compression) {
+      const payload = { poem, step };
+      if (step === "language" && compression) {
         payload.compression_score = compression.score;
-        // A Worker az idézetet külön ellenőrzi; nem gyártunk bizonyítékot.
         if (compression.evidence) payload.compression_evidence = compression.evidence;
       }
       const response = await fetch(LANGUAGE_WORKER_URL, {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
-      if (!response.ok || !data.ok || data.result?.[task.key] == null) {
-        throw new Error(data?.errors?.[task.step] || data?.error || "Hiányzó eredmény");
+      if (!response.ok || !data.ok || data.result?.[key] == null) {
+        throw new Error(data?.errors?.[step] || data?.error || "Hiányzó eredmény");
       }
-      result[task.key] = data.result[task.key];
+      // Régebbi futás nem írhatja felül egy új vers eredményét.
+      if (runId !== languageMeaningRunId) return null;
+      let cache = {};
+      try { cache = JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch (_) {}
+      const result = cache.poem === poem ? (cache.result || {}) : {};
+      result[key] = data.result[key];
       sessionStorage.setItem(LANGUAGE_CACHE_KEY, JSON.stringify({poem, result}));
+      sessionStorage.removeItem("analysis_language_" + step + "_error");
+      const otherError = sessionStorage.getItem("analysis_language_" + (step === "language" ? "meaning" : "language") + "_error");
+      if (otherError) sessionStorage.setItem("analysis_language_v2_v4_errors", otherError);
+      else sessionStorage.removeItem("analysis_language_v2_v4_errors");
+      appendRunnerInfo(label + " elkészült.");
+      return data.result[key];
     } catch (e) {
-      problems.push(task.step + ": " + String(e.message || e));
+      if (runId !== languageMeaningRunId) return null;
+      const message = step + ": " + String(e.message || e);
+      sessionStorage.setItem("analysis_language_" + step + "_error", message);
+      const otherError = sessionStorage.getItem("analysis_language_" + (step === "language" ? "meaning" : "language") + "_error");
+      sessionStorage.setItem("analysis_language_v2_v4_errors", [message, otherError].filter(Boolean).join("; "));
+      appendRunnerInfo(label + " hiba: " + message);
+      return null; // A fő elemzési láncot nem állítjuk le.
     }
-  }
-  if (problems.length) {
-    sessionStorage.setItem("analysis_language_v2_v4_errors", problems.join("; "));
-    appendRunnerInfo("V2/V4 részleges hiba: " + problems.join("; "));
-  } else {
-    sessionStorage.removeItem("analysis_language_v2_v4_errors");
-    appendRunnerInfo("V2 és V4 elkészült az indexen.");
-  }
-  return result;
+  })();
+}
+
+function startLanguageWhenInnerReady(poem, innerPromise, runId) {
+  return innerPromise.then(inner => {
+    if (runId !== languageMeaningRunId) return null;
+    const compression = findCompressionInfo(inner);
+    appendRunnerInfo("Belső mérés kész; V2 azonnal indul" + (compression ? " (sűrítés: " + compression.score + "/10)." : " (sűrítési adat nem található)."));
+    return startLanguageMeaningTask(poem, "language", compression, runId);
+  }).catch(e => {
+    if (runId === languageMeaningRunId) appendRunnerInfo("V2 nem indult: a belső mérés sikertelen (" + String(e.message || e) + ").");
+    return null;
+  });
 }
 
 const INNER_WORKER_URL = "https://belsomeres-public.trknorbert76.workers.dev";
@@ -1372,6 +1394,11 @@ btn.onclick = () => {
 }
 
 function clearStepStorage() {
+  languageMeaningRunId++;
+  sessionStorage.removeItem(LANGUAGE_CACHE_KEY);
+  sessionStorage.removeItem("analysis_language_v2_v4_errors");
+  sessionStorage.removeItem("analysis_language_language_error");
+  sessionStorage.removeItem("analysis_language_meaning_error");
    sessionStorage.removeItem("analysis_form");
   sessionStorage.removeItem("analysis_kind");
   sessionStorage.removeItem("analysis_interpretation");
@@ -2288,6 +2315,10 @@ secretContest.addEventListener("click", async () => {
     sessionStorage.setItem("poem", poem);
     sessionStorage.setItem("poemText", poem);
 
+    // V4 rögtön indul, nem vár a felismerésre vagy a belső mérésre.
+    const v2v4RunId = languageMeaningRunId;
+    const meaningPromise = startLanguageMeaningTask(poem, "meaning", null, v2v4RunId);
+
     // új azonosító
     const analysisId = crypto.randomUUID();
     sessionStorage.setItem("analysis_id", analysisId);
@@ -2655,7 +2686,8 @@ const basePrevious = {
    const depthPromise = startDepthAnalysis(poem);
 
 const innerPromise = startInnerMeasure(poem, kind);
-const languageMeaningPromise = startLanguageAndMeaning(poem, innerPromise);
+const languagePromise = startLanguageWhenInnerReady(poem, innerPromise, v2v4RunId);
+// meaningPromise és languagePromise külön fut; nem blokkolják az Ellenőrt.
 
    const wolkerPromise = startWolkerAnalysis(poem);
 
@@ -2721,8 +2753,7 @@ const [
   expression,
   depth,
   impact,
-  wolker,
-  languageMeaning
+  wolker
 ] = await Promise.all([
   interpretationPromise,
   innerPromise,
@@ -2732,8 +2763,7 @@ const [
   expressionPromise,
   depthPromise,
   impactPromise,
-  wolkerPromise,
-  languageMeaningPromise
+  wolkerPromise
 ]);
 
     updateDepthStatus();
