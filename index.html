@@ -671,6 +671,7 @@ function updateExpressionCombinedUi() {
   if (!btn || !box || !note) return;
   if (expressionComplete()) {
     setStepDone(step);
+    if (sessionStorage.getItem("analysis_running") !== "1" && sessionStorage.getItem("step_summary_done")) showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
     return;
   }
   const original = !!sessionStorage.getItem("step_expression_done");
@@ -689,6 +690,32 @@ function updateExpressionCombinedUi() {
   if (fill) { fill.style.transition = "width .4s ease"; fill.style.width = original ? "85%" : "55%"; }
   btn.textContent = failed.length ? "Kifejezésmód – V2/V4 hiba" : "Kifejezésmód folyamatban";
   note.textContent = failed.length ? "Hibás: " + failed.join(", ") + ". Részletek a Kifejezésmód oldalon." : "Még vár: " + missing.join(", ") + ".";
+}
+
+
+async function reviewV2V4Overlaps(poem, runId) {
+  if (runId !== languageMeaningRunId) return;
+  let cache={};try{cache=JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY)||'{}');}catch{}
+  if(cache.poem!==poem)return;
+  const v2=cache.result?.language_quality?.overexplanation?.passages||[];
+  const v4=cache.result?.meaningful_passages||[];
+  const conflicts=[];
+  for(const a of v2)for(const b of v4){
+    if(a.start_line<=b.end_line&&b.start_line<=a.end_line){
+      conflicts.push({v2_lines:[a.start_line,a.end_line],v4_lines:[b.start_line,b.end_line],v2_reason:a.reason,v4_meaning:b.added_meaning,v4_evidence:b.evidence});
+    }
+  }
+  if(!conflicts.length){cache.result.crosscheck={conflicts:[],reviews:[]};sessionStorage.setItem(LANGUAGE_CACHE_KEY,JSON.stringify(cache));return;}
+  setV2V4Status('crosscheck','running');
+  try{
+    const response=await fetch(LANGUAGE_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({poem,step:'crosscheck',conflicts})});
+    const data=await response.json();if(!response.ok||!data.ok)throw Error(data.error||'Összevetési hiba');
+    if(runId!==languageMeaningRunId)return;
+    const fresh=JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY)||'{}');if(fresh.poem!==poem)return;
+    fresh.result.crosscheck=data.result.crosscheck;
+    sessionStorage.setItem(LANGUAGE_CACHE_KEY,JSON.stringify(fresh));
+    setV2V4Status('crosscheck','done');appendRunnerInfo('V2/V4 ellentmondások ellenőrzése kész.');
+  }catch(e){if(runId===languageMeaningRunId){setV2V4Status('crosscheck','error',String(e.message||e));appendRunnerInfo('V2/V4 összevetés nem sikerült: '+e.message);}}
 }
 
 function startLanguageMeaningTask(poem, step, compression = null, runId = languageMeaningRunId) {
@@ -2746,6 +2773,7 @@ const basePrevious = {
 
 const innerPromise = startInnerMeasure(poem, kind);
 const languagePromise = startLanguageWhenInnerReady(poem, innerPromise, v2v4RunId);
+Promise.allSettled([meaningPromise,languagePromise]).then(()=>reviewV2V4Overlaps(poem,v2v4RunId));
 // meaningPromise és languagePromise külön fut; nem blokkolják az Ellenőrt.
 
    const wolkerPromise = startWolkerAnalysis(poem);
@@ -2918,7 +2946,7 @@ if (consumeData.paid_uses !== undefined) {
 userTopBox.textContent =
   `${localStorage.getItem("user_email")} | Ingyenes: ${consumeData.free_uses ?? 0} | Fizetős: ${consumeData.paid_uses ?? 0}`;
 
-    showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
+    showOk(expressionComplete() ? "Minden elemzés elkészült. Beléphetsz bármelyik oldalra." : "A fő elemzés elkészült; a Kifejezésmód még a V2/V4 eredményére vár.");
    introText.textContent = "Elemzés elkészült.";
 
    logoutBtn.classList.remove("secondary");
@@ -2988,7 +3016,7 @@ newPoemBtn.classList.remove("secondary");
 newPoemBtn.classList.add("goldAction");
 
 
-  showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
+  showOk(expressionComplete() ? "Minden elemzés elkészült. Beléphetsz bármelyik oldalra." : "A fő elemzés elkészült; a Kifejezésmód még a V2/V4 eredményére vár.");
 }
 
 restoreFinishedUi();
