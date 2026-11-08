@@ -549,33 +549,73 @@ resultLayout.style.display = "grid";
       }
     }
 
+    // A két rész külön kérésben fut: ha az egyik elkészül, nem vész el a másik hibája miatt.
+    let newAnalysisRunning = false;
     async function runNewAnalysis(poem, forceRefresh = false) {
+      if (newAnalysisRunning) return;
+      newAnalysisRunning = true;
       const loading = document.getElementById("newWorkerLoading");
       const error = document.getElementById("newWorkerError");
       error.style.display = "none";
       const cached = getStoredPack(NEW_CACHE_KEY);
-      if (!forceRefresh && cached?.poem === poem && cached?.result?.language_quality && Array.isArray(cached?.result?.meaningful_passages)) {
-        renderNewResults(cached.result);
-        return;
-      }
-      loading.textContent = "Nyelvi működés – V2 és jelentésteremtő szövegrészek – V4 elemzése folyamatban...";
+      const result = (!forceRefresh && cached?.poem === poem) ? {...(cached.result || {})} : {};
+      renderNewResults(result);
+      const tasks = [
+        {step:"language", key:"language_quality", ready: () => !!result.language_quality},
+        {step:"meaning", key:"meaningful_passages", ready: () => Array.isArray(result.meaningful_passages)}
+      ].filter(t => !t.ready());
+      if (!tasks.length) { newAnalysisRunning = false; return; }
       loading.style.display = "block";
+      const save = () => {
+        sessionStorage.setItem(NEW_CACHE_KEY, JSON.stringify({poem, result}));
+        renderNewResults(result);
+      };
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+      async function requestStep(task) {
+        let lastError;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          loading.textContent = `${task.step === "language" ? "Nyelvi működés – V2" : "Jelentésteremtő szövegrészek – V4"} elemzése folyamatban...` +
+            (attempt > 1 ? " Átmeneti hiba, újrapróbálkozás (2/2)..." : "");
+          try {
+            const res = await fetch(LANGUAGE_WORKER_URL, {
+              method: "POST", headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({poem, step:task.step})
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+              const details = data?.errors?.[task.step] || data?.error || `HTTP ${res.status}`;
+              const err = new Error(details);
+              err.retryable = res.status === 502 || res.status === 503 || res.status === 504 || res.status === 429;
+              throw err;
+            }
+            if (task.step === "language" && !data.result?.language_quality) throw new Error("Hiányzik a V2 eredménye.");
+            if (task.step === "meaning" && !Array.isArray(data.result?.meaningful_passages)) throw new Error("Hiányzik a V4 eredménye.");
+            result[task.key] = data.result[task.key];
+            save();
+            return null;
+          } catch (err) {
+            lastError = err;
+            if (attempt === 2 || err.retryable === false || (err.retryable === undefined && !(err instanceof TypeError))) break;
+            await wait(5000);
+          }
+        }
+        return `${task.step === "language" ? "V2" : "V4"}: ${lastError?.message || "Ismeretlen hiba"}`;
+      }
       try {
-        const res = await fetch(LANGUAGE_WORKER_URL, {
-          method: "POST", headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({poem, step:"all"})
-        });
-        const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.error || "Az új Worker hibát jelzett.");
-        if (!data.result?.language_quality || !Array.isArray(data.result?.meaningful_passages))
-          throw new Error("Hiányos válasz érkezett az új Workertől.");
-        sessionStorage.setItem(NEW_CACHE_KEY, JSON.stringify({poem, result:data.result}));
-        renderNewResults(data.result);
-      } catch (e) {
-        error.textContent = "Az új elemzés nem készült el: " + (e.message || e);
-        error.style.display = "block";
+        // Nem párhuzamosítjuk a drága GPT-5 hívásokat: a már kész rész mentve marad.
+        const errors = [];
+        for (const task of tasks) {
+          const problem = await requestStep(task);
+          if (problem) errors.push(problem);
+        }
+        if (errors.length) {
+          error.textContent = "Az elemzés egy része nem készült el:\n" + errors.join("\n") +
+            "\nA következő belépéskor csak a hiányzó rész indul újra.";
+          error.style.display = "block";
+        }
       } finally {
         loading.style.display = "none";
+        newAnalysisRunning = false;
       }
     }
 
