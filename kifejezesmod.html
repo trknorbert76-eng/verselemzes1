@@ -298,6 +298,8 @@
       <h2>Nyelvi működés – V2</h2>
       <div class="mainType" id="languageScore">—</div>
       <div class="valueBox" id="languageParts">—</div>
+      <div class="noteBox" id="compressionCapInfo">—</div>
+      <div class="noteBox" id="secondPassInfo">—</div>
       <div class="miniTitle" style="margin-top:18px;">Jelentésteremtő szövegrészek – felismert kapcsolatok</div>
       <div id="languageBestSentences" class="noteBox">—</div>
       <div class="miniTitle" style="margin-top:18px;">Bizonyított nyelvi rendellenességek</div>
@@ -309,6 +311,7 @@
       <h2>Jelentésteremtő szövegrészek – V4</h2>
       <div id="meaningResults" class="noteBox">—</div>
     </div>
+    <div class="card" id="crosscheckCard" style="display:none; margin-top:20px;"><h2>V2/V4 – Átfedő sorok ellenőrzése</h2><div id="crosscheckResults" class="noteBox">—</div></div>
     <div class="loadingBox" id="newWorkerLoading"></div>
     <div class="errorBox" id="newWorkerError"></div>
 
@@ -526,6 +529,13 @@ resultLayout.style.display = "grid";
           `Jelentésbeli pontosság: ${q.semantic_precision ?? "—"}/100\n` +
           `Világosság: ${q.clarity ?? "—"}/100\n` +
           `Következetesség: ${q.consistency ?? "—"}/100`;
+        const cc=q.compression_control||{};
+        document.getElementById('compressionCapInfo').textContent=cc.cap_active
+          ? `Belső sűrítés: ${cc.received}/10 | Nyelvi alap és túlmagyarázási levonás után: ${cc.score_before_cap}/100 | Sűrítési plafon: ${cc.cap}/100 | Plafon miatti korrekció: −${cc.cap_reduction??0} pont. (A túlmagyarázási levonás ettől külön: −${q.overexplanation?.penalty??0} pont.)`
+          : `Belső sűrítés: ${cc.received??'nincs adat'}/10 | Nincs alkalmazott sűrítési plafon. Túlmagyarázási levonás: −${q.overexplanation?.penalty??0} pont.`;
+        document.getElementById('secondPassInfo').textContent=q.second_pass?.attempted
+          ? `Második célzott túlmagyarázás-vizsgálat: ${q.second_pass.error?'nem sikerült ('+q.second_pass.error+')':q.second_pass.found+' igazolt találat'} (${q.second_pass.model}).`
+          : 'Második célzott vizsgálat nem volt szükséges.';
         const best = Array.isArray(q.best_sentences) ? q.best_sentences : [];
         document.getElementById("languageBestSentences").textContent = best.length
           ? best.map((x, i) => `${i + 1}. „${x}”`).join("\n\n")
@@ -534,6 +544,15 @@ resultLayout.style.display = "grid";
         document.getElementById("languageIssues").textContent = issues.length
           ? issues.map((x, i) => `${i + 1}. „${x.quote}”\n${x.type}: ${x.reason}`).join("\n\n")
           : "Nem talált bizonyítható nyelvi rendellenességet.";
+      }
+      const cross=result?.crosscheck;
+      const crossCard=document.getElementById('crosscheckCard');
+      crossCard.style.display=cross?'block':'none';
+      if(cross){
+        const names={v2_megalapozott:'A V2 kifogása megalapozott',v4_megalapozott:'A V4 jelentéstöbblete megalapozott',mindketto_reszben:'Mindkét értelmezés részben igaz',nem_eldontheto:'Nem dönthető el egyértelműen'};
+        document.getElementById('crosscheckResults').textContent=!cross.conflicts?.length?'Nem volt átfedő V2/V4 találat.':
+          (cross.reviews||[]).length?cross.reviews.map((r,n)=>`${n+1}. V2: ${(r.v2_lines||[]).join('–')}. sor; V4: ${(r.v4_lines||[]).join('–')}. sor\n${names[r.verdict]||r.verdict}\n${r.reason}`).join('\n\n'):
+          'Átfedés van, az ellenőrzés még folyamatban van vagy nem sikerült. A V2 pontszáma ettől nem változik.';
       }
       const passages = result?.meaningful_passages;
       const card = document.getElementById("meaningCard");
@@ -579,7 +598,7 @@ resultLayout.style.display = "grid";
           try {
             const res = await fetch(LANGUAGE_WORKER_URL, {
               method: "POST", headers: {"Content-Type":"application/json"},
-              body: JSON.stringify({poem, step:task.step})
+              body: JSON.stringify({poem, step:task.step, ...(task.step === "language" ? {compression_score: (()=>{try{return JSON.parse(sessionStorage.getItem("analysis_language_v2_meaning_v4")||"{}").result?.language_quality?.compression_control?.received??null;}catch{return null;}})()} : {})})
             });
             const data = await res.json();
             if (!res.ok || !data.ok) {
