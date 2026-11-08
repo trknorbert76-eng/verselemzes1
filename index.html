@@ -2583,6 +2583,10 @@ sessionStorage.setItem("analysis_running", "1");
     sessionStorage.setItem("poem", poem);
     sessionStorage.setItem("poemText", poem);
 
+    // V4 azonnal indul a sikeres versellenőrzés után; V2 a belső mérésre vár.
+    const v2v4RunId = languageMeaningRunId;
+    const meaningPromise = startLanguageMeaningTask(poem, "meaning", null, v2v4RunId);
+
    // FORMAI ELŐELEMZŐ FUTTATÁSA A HÁTTÉRBEN
 await new Promise((resolve) => {
   const frame = document.getElementById("runnerFrame");
