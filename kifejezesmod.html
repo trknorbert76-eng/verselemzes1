@@ -307,6 +307,15 @@
       <div class="noteBox">A nyelvi pontszám egyelőre önálló mérés; a végső Ellenőr pontszámát nem módosítja.</div>
     </div>
 
+    <div class="card" id="economyCard" style="margin-top:20px;">
+      <h2>V4 – Költői sűrítés és elhagyhatóság</h2>
+      <div class="mainType" id="economyScore">Még nincs új V4-mérés.</div>
+      <div class="valueBox" id="economyStats">Az új V4 eredményét külön le kell kérni.</div>
+      <div class="noteBox" id="economyFindings">—</div>
+      <button id="rerunV4Btn" style="margin-top:12px;">Új V4-mérés indítása</button>
+      <div class="loadingBox" id="economyLoading"></div>
+      <div class="errorBox" id="economyError"></div>
+    </div>
     <div class="card" id="meaningCard" style="display:none; margin-top:20px;">
       <h2>Jelentésteremtő szövegrészek – V4</h2>
       <div id="meaningResults" class="noteBox">—</div>
@@ -518,7 +527,63 @@ resultLayout.style.display = "grid";
       
     }
 
+    function renderEconomy(result) {
+      const e = result?.poetic_economy;
+      document.getElementById('economyScore').textContent = Number.isFinite(e?.score)
+        ? `${e.score}/100 pont` : 'Még nincs új V4-mérés.';
+      document.getElementById('economyStats').textContent = e
+        ? `Igazoltan elhagyható részletek: ${e.detected ?? e.passages?.length ?? 0}\nÉrintett sorok: ${e.affected_lines ?? '—'} / ${e.total_nonempty_lines ?? '—'} (${e.affected_ratio ?? '—'}%)\nLevonás: −${e.penalty ?? '—'} pont.\nEz a költői gazdaságosság mutatója, nem a vers teljes irodalmi pontszáma.`
+        : 'A régi V4-találatok önmagukban nem tartalmaznak sűrítési pontszámot. Indíts új V4-mérést.';
+      document.getElementById('economyFindings').textContent = e
+        ? (Array.isArray(e.passages) && e.passages.length
+          ? e.passages.map((x,i) => `${i+1}. (${x.start_line}–${x.end_line}. sor, súlyosság: ${x.severity}/3)\n„${x.quote}”\nIndok: ${x.reason}\nA részlet mellett: ${x.possible_function}\nMiért nem elegendő: ${x.why_insufficient}\nElhagyási próba: ${x.removal_effect}`).join('\n\n')
+          : 'Nem talált bizonyítottan elhagyható részletet.') : '—';
+    }
+
+    async function rerunV4() {
+      const poem = sessionStorage.getItem('poem');
+      if (!poem) return;
+      const btn = document.getElementById('rerunV4Btn');
+      const loading = document.getElementById('economyLoading');
+      const error = document.getElementById('economyError');
+      btn.disabled = true;
+      loading.style.display = 'block';
+      error.style.display = 'none';
+      try {
+        let data;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          loading.textContent = attempt === 1 ? 'V4 elemzése folyamatban...' : 'Átmeneti hiba: V4 újrapróbálkozás (2/2)...';
+          try {
+            const response = await fetch(LANGUAGE_WORKER_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({poem,step:'meaning'})});
+            data = await response.json();
+            if (!response.ok || !data.ok || !data.result?.poetic_economy) {
+              const err = new Error(data?.errors?.meaning || data?.error || 'Hiányzik az új V4 poetic_economy eredménye. Ellenőrizd, hogy az új Worker van-e telepítve.');
+              err.retryable = [429,502,503,504].includes(response.status);
+              throw err;
+            }
+            break;
+          } catch (err) {
+            if (attempt === 2 || err.retryable === false) throw err;
+            await new Promise(resolve => setTimeout(resolve, 3000));
+          }
+        }
+        const old = getStoredPack(NEW_CACHE_KEY);
+        const result = old?.poem === poem ? {...(old.result || {})} : {};
+        result.poetic_economy = data.result.poetic_economy;
+        if (Array.isArray(data.result.meaningful_passages)) result.meaningful_passages = data.result.meaningful_passages;
+        sessionStorage.setItem(NEW_CACHE_KEY, JSON.stringify({poem,result}));
+        renderNewResults(result);
+      } catch (err) {
+        error.textContent = 'V4 hiba: ' + (err.message || String(err));
+        error.style.display = 'block';
+      } finally {
+        loading.style.display = 'none';
+        btn.disabled = false;
+      }
+    }
+
     function renderNewResults(result) {
+      renderEconomy(result);
       const q = result?.language_quality;
       const qCard = document.getElementById("languageQualityCard");
       qCard.style.display = q ? "block" : "none";
@@ -799,6 +864,7 @@ topNextBtn.addEventListener("click", () => {
   window.location.href = NEXT_PAGE;
 });
 
+    document.getElementById('rerunV4Btn').addEventListener('click', rerunV4);
     runExpressionAnalysis(false);
   </script>
 </body>
