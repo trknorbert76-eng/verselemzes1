@@ -614,7 +614,7 @@ const DEPTH_WORKER_URL = "https://melyseg-depth-public.trknorbert76.workers.dev"
 const IMPACT_WORKER_URL = "https://hatas-depth-public.trknorbert76.workers.dev";
 const INTERPRETATION_WORKER_URL = "https://ertelmezes-public.trknorbert76.workers.dev";
 const LANGUAGE_WORKER_URL = "https://verskritika-nyelvi-v2.trknorbert76.workers.dev/";
-const LANGUAGE_CACHE_KEY = "analysis_language_v2_meaning_v4";
+const LANGUAGE_CACHE_KEY = "analysis_language_v2_meaning_v5";
 
 // A V2 és V4 már az indexen elkészül, a kifejezésmód csak megjeleníti őket.
 function findCompressionInfo(pack) {
@@ -660,7 +660,7 @@ function expressionComplete() {
   let cache = {};
   try { cache = JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch {}
   return !!sessionStorage.getItem("step_expression_done") && cache.poem === poem &&
-    !!cache.result?.language_quality && Array.isArray(cache.result?.meaningful_passages);
+    !!cache.result?.language_quality && Array.isArray(cache.result?.meaningful_passages) && !!cache.result?.poetic_economy;
 }
 function updateExpressionCombinedUi() {
   const step = pipeline?.find?.(s => s.key === "expression");
@@ -681,7 +681,7 @@ function updateExpressionCombinedUi() {
   if (!original) missing.push("eredeti Kifejezésmód");
   const cache = (() => { try { return JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch { return {}; } })();
   if (!cache.result?.language_quality || cache.poem !== sessionStorage.getItem("poem")) missing.push("V2");
-  if (!Array.isArray(cache.result?.meaningful_passages) || cache.poem !== sessionStorage.getItem("poem")) missing.push("V4");
+  if (!Array.isArray(cache.result?.meaningful_passages) || !cache.result?.poetic_economy || cache.poem !== sessionStorage.getItem("poem")) missing.push("V4");
   const failed = ["language", "meaning"].filter(k => statuses[k]?.status === "error").map(k => k === "language" ? "V2" : "V4");
   btn.disabled = true;
   btn.classList.remove("done"); btn.classList.add("loading");
@@ -735,7 +735,7 @@ function startLanguageMeaningTask(poem, step, compression = null, runId = langua
         body: JSON.stringify(payload)
       });
       const data = await response.json();
-      if (!response.ok || !data.ok || data.result?.[key] == null) {
+      if (!response.ok || !data.ok || data.result?.[key] == null || (step === "meaning" && !data.result?.poetic_economy)) {
         throw new Error(data?.errors?.[step] || data?.error || "Hiányzó eredmény");
       }
       // Régebbi futás nem írhatja felül egy új vers eredményét.
@@ -744,6 +744,7 @@ function startLanguageMeaningTask(poem, step, compression = null, runId = langua
       try { cache = JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch (_) {}
       const result = cache.poem === poem ? (cache.result || {}) : {};
       result[key] = data.result[key];
+       if (step === "meaning") result.poetic_economy = data.result.poetic_economy;
       sessionStorage.setItem(LANGUAGE_CACHE_KEY, JSON.stringify({poem, result}));
       sessionStorage.removeItem("analysis_language_" + step + "_error");
       const otherError = sessionStorage.getItem("analysis_language_" + (step === "language" ? "meaning" : "language") + "_error");
