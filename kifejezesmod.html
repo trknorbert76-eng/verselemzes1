@@ -294,34 +294,14 @@
       </div>
     </div>
 
-    <div class="card" id="languageQualityCard" style="display:none; margin-top:20px;">
-      <h2>Nyelvi működés – V2</h2>
-      <div class="mainType" id="languageScore">—</div>
-      <div class="valueBox" id="languageParts">—</div>
-      <div class="noteBox" id="compressionCapInfo">—</div>
-      <div class="noteBox" id="secondPassInfo">—</div>
-      <div class="miniTitle" style="margin-top:18px;">Jelentésteremtő szövegrészek – felismert kapcsolatok</div>
-      <div id="languageBestSentences" class="noteBox">—</div>
-      <div class="miniTitle" style="margin-top:18px;">Bizonyított nyelvi rendellenességek</div>
-      <div id="languageIssues" class="noteBox">—</div>
-      <div class="noteBox">A nyelvi pontszám egyelőre önálló mérés; a végső Ellenőr pontszámát nem módosítja.</div>
+    <div class="card" id="abCard" style="margin-top:20px;">
+      <h2>A/B mintavizsgálat</h2>
+      <div class="mainType" id="abGroup">Még nincs eredmény.</div>
+      <div class="noteBox" id="abPassages">A vizsgálat nem kötelezően talál betoldást.</div>
+      <div class="loadingBox" id="abLoading"></div>
+      <div class="errorBox" id="abError"></div>
+      <button class="secondary" id="abRefresh" style="margin-top:14px;">A/B vizsgálat újrafuttatása</button>
     </div>
-
-    <div class="card" id="economyCard" style="margin-top:20px;">
-      <h2>V4 – Költői teljesítmény és szövegfegyelem</h2>
-      <div class="mainType" id="economyScore">Még nincs új V4-mérés.</div>
-      <div class="valueBox" id="economyStats">Az új V4 eredményét külön le kell kérni.</div>
-      <div class="noteBox" id="economyFindings">—</div>
-      <div class="loadingBox" id="economyLoading"></div>
-      <div class="errorBox" id="economyError"></div>
-    </div>
-    <div class="card" id="meaningCard" style="display:none; margin-top:20px;">
-      <h2>Jelentésteremtő szövegrészek – V4</h2>
-      <div id="meaningResults" class="noteBox">—</div>
-    </div>
-    <div class="card" id="crosscheckCard" style="display:none; margin-top:20px;"><h2>V2/V4 – Átfedő sorok ellenőrzése</h2><div id="crosscheckResults" class="noteBox">—</div></div>
-    <div class="loadingBox" id="newWorkerLoading"></div>
-    <div class="errorBox" id="newWorkerError"></div>
 
     <div class="previousBox" id="previousBox" style="display:none;">
       <h2>Az előző lépések eredménye</h2>
@@ -409,8 +389,8 @@
 
     const WORKER_URL = "https://verskritika-public.trknorbert76.workers.dev";
     const NEXT_PAGE = "melyseg.html";
-    const LANGUAGE_WORKER_URL = "https://verskritika-nyelvi-v2.trknorbert76.workers.dev/";
-    const NEW_CACHE_KEY = "analysis_language_v2_meaning_v5";
+    const AB_WORKER_URL = "https://verskritika-nyelvi-v2.trknorbert76.workers.dev/"; // Ide kerül az új Worker URL-je, ha más néven telepíted.
+    const AB_CACHE_KEY = "analysis_ab_pairs_v1";
 
     const params = new URLSearchParams(window.location.search);
     const autorun = params.get("autorun") === "1";
@@ -526,166 +506,35 @@ resultLayout.style.display = "grid";
       
     }
 
-    function renderEconomy(result) {
-      const e=result?.poetic_economy;
-      document.getElementById('economyScore').textContent=Number.isFinite(e?.score)?`${e.score}/100 pont`:'A V4 eredménye még nem érkezett meg.';
-      if(!e){document.getElementById('economyStats').textContent='A V4 a teljes elemzési lánccal automatikusan fut.';document.getElementById('economyFindings').textContent='—';return;}
-      const labels={meaning_creation:'Valódi jelentésteremtés',compression:'Költői sűrítés',functional_necessity:'Funkcionális indokoltság',coherence:'Képek és gondolatok összetartása',proportion:'Szerkesztési arányérzék'};
-      const max={meaning_creation:25,compression:25,functional_necessity:20,coherence:20,proportion:10};
-      document.getElementById('economyStats').textContent=Object.keys(labels).map(k=>`${labels[k]}: ${e.scores?.[k]??'—'}/${max[k]}`).join('\n')+`\n\nBiztosan elhagyhatónak ítélt részletek: ${e.detected??0}. Ez önálló kritikai becslés, nem a végső pontszám.`;
-      const sections=[];
-      for(const k of Object.keys(labels)){const v=e.score_evidence?.[k];if(v)sections.push(`${labels[k]}\nBizonyíték: ${v.evidence}\nKorlát: ${v.limitation}`);}
-      const wp=e.whole_poem||{};
-      sections.push(`A VERS EGÉSZE\nBelső mozgás: ${wp.movement||'—'}\nErősség: ${wp.strength||'—'}\nGyengeség: ${wp.weakness||'—'}`);
-      if(wp.structural_breaks?.length)sections.push('SZERKEZETI TÖRÉSEK / ARÁNYTALANSÁGOK\n'+wp.structural_breaks.map((p,i)=>`${i+1}. ${p.start_line}–${p.end_line}. sor: „${p.quote}”\n${p.reason}\nHatás: ${p.effect}`).join('\n\n'));
-      if(e.passages?.length)sections.push('ELHAGYÁSI PRÓBÁK\n'+e.passages.map((p,i)=>`${i+1}. ${p.start_line}–${p.end_line}. sor (${p.verdict==='vitathato'?'vitatható':'elhagyhatónak ítélt'})\n„${p.quote}”\n${p.reason}\nEllenvetés: ${p.possible_function}\nMiért nem elég: ${p.why_insufficient}\nElhagyás: ${p.removal_effect}`).join('\n\n'));
-      document.getElementById('economyFindings').textContent=sections.join('\n\n');
+    let abRunning = false;
+    function renderAB(data) {
+      document.getElementById("abGroup").textContent = data?.group === "A" ? "A csoport" : data?.group === "B" ? "B csoport" : "Még nincs eredmény.";
+      document.getElementById("abPassages").textContent = data?.group === "A"
+        ? (data.passages?.length ? "Gyanús részletek:\n\n" + data.passages.map((q,i) => `${i+1}. „${q}”`).join("\n\n") : "Nincs ellenőrizhető idézet.")
+        : data?.group === "B" ? "Nem talált a minták alapján meggyőző betoldásos részletet." : "A vizsgálat nem kötelezően talál betoldást.";
     }
-
-    function renderNewResults(result) {
-      renderEconomy(result);
-      const q = result?.language_quality;
-      const qCard = document.getElementById("languageQualityCard");
-      qCard.style.display = q ? "block" : "none";
-      if (q) {
-        document.getElementById("languageScore").textContent = `${q.score ?? "—"}/100 pont`;
-        document.getElementById("languageParts").textContent =
-          `Mondatszerkezet: ${q.sentence_structure ?? "—"}/100\n` +
-          `Jelentésbeli pontosság: ${q.semantic_precision ?? "—"}/100\n` +
-          `Világosság: ${q.clarity ?? "—"}/100\n` +
-          `Következetesség: ${q.consistency ?? "—"}/100`;
-        const cc=q.compression_control||{};
-        document.getElementById('compressionCapInfo').textContent=cc.cap_active
-          ? `Belső sűrítés: ${cc.received}/10 | Nyelvi alap és túlmagyarázási levonás után: ${cc.score_before_cap}/100 | Sűrítési plafon: ${cc.cap}/100 | Plafon miatti korrekció: −${cc.cap_reduction??0} pont. (A túlmagyarázási levonás ettől külön: −${q.overexplanation?.penalty??0} pont.)`
-          : `Belső sűrítés: ${cc.received??'nincs adat'}/10 | Nincs alkalmazott sűrítési plafon. Túlmagyarázási levonás: −${q.overexplanation?.penalty??0} pont.`;
-        document.getElementById('secondPassInfo').textContent=q.second_pass?.attempted
-          ? `Második célzott túlmagyarázás-vizsgálat: ${q.second_pass.error?'nem sikerült ('+q.second_pass.error+')':q.second_pass.found+' igazolt találat'} (${q.second_pass.model}).`
-          : 'Második célzott vizsgálat nem volt szükséges.';
-        const best = Array.isArray(q.best_sentences) ? q.best_sentences : [];
-        document.getElementById("languageBestSentences").textContent = best.length
-          ? best.map((x, i) => `${i + 1}. „${x}”`).join("\n\n")
-          : "Nincs kiemelt mondat.";
-        const issues = Array.isArray(q.issues) ? q.issues : [];
-        document.getElementById("languageIssues").textContent = issues.length
-          ? issues.map((x, i) => `${i + 1}. „${x.quote}”\n${x.type}: ${x.reason}`).join("\n\n")
-          : "Nem talált bizonyítható nyelvi rendellenességet.";
-      }
-      const cross=result?.crosscheck;
-      const crossCard=document.getElementById('crosscheckCard');
-      crossCard.style.display=cross?'block':'none';
-      if(cross){
-        const names={v2_megalapozott:'A V2 kifogása megalapozott',v4_megalapozott:'A V4 jelentéstöbblete megalapozott',mindketto_reszben:'Mindkét értelmezés részben igaz',nem_eldontheto:'Nem dönthető el egyértelműen'};
-        document.getElementById('crosscheckResults').textContent=!cross.conflicts?.length?'Nem volt átfedő V2/V4 találat.':
-          (cross.reviews||[]).length?cross.reviews.map((r,n)=>`${n+1}. V2: ${(r.v2_lines||[]).join('–')}. sor; V4: ${(r.v4_lines||[]).join('–')}. sor\n${names[r.verdict]||r.verdict}\n${r.reason}`).join('\n\n'):
-          'Átfedés van, az ellenőrzés még folyamatban van vagy nem sikerült. A V2 pontszáma ettől nem változik.';
-      }
-      const passages = result?.meaningful_passages;
-      const card = document.getElementById("meaningCard");
-      card.style.display = Array.isArray(passages) ? "block" : "none";
-      if (Array.isArray(passages)) {
-        const names = {K1:"Jellemző mozdulat", K8:"Visszatérő részlet", K9:"Következmény / nyom",
-          K4:"Kimondatlan érzés", K5:"Idő / távolság / észlelés", K6:"Kapcsolatot mutató gesztus", K7:"Írás / beszéd / emlékezés"};
-        document.getElementById("meaningResults").textContent = passages.length
-          ? passages.map((x, i) => `${i + 1}. [${(x.categories || []).map(k => names[k] || k).join(", ")}] (${x.start_line}–${x.end_line}. sor)\n„${x.quote}”\n` +
-              `Kapcsolódó részlet: ${(x.support_quotes || []).map(y => `„${y.quote}”`).join("; ") || "—"}\n` +
-              `Jelentéstöbblet: ${x.added_meaning}\nBizonyíték: ${x.evidence}`).join("\n\n")
-          : "Nem talált igazolható jelentésteremtő kapcsolatot.";
-      }
-    }
-
-    // A két rész külön kérésben fut: ha az egyik elkészül, nem vész el a másik hibája miatt.
-    let newAnalysisRunning = false;
-    async function runNewAnalysis(poem, forceRefresh = false) {
-      if (newAnalysisRunning) return;
-      newAnalysisRunning = true;
-      const loading = document.getElementById("newWorkerLoading");
-      const error = document.getElementById("newWorkerError");
+    async function runAB(poem, force = false) {
+      if (!poem || abRunning) return;
+      const saved = getStoredPack(AB_CACHE_KEY);
+      if (!force && saved?.poem === poem && saved?.result) { renderAB(saved.result); return; }
+      abRunning = true;
+      const loading = document.getElementById("abLoading"), error = document.getElementById("abError");
       error.style.display = "none";
-      const cached = getStoredPack(NEW_CACHE_KEY);
-      const result = (!forceRefresh && cached?.poem === poem) ? {...(cached.result || {})} : {};
-      renderNewResults(result);
-      const tasks = [
-        {step:"language", key:"language_quality", ready: () => !!result.language_quality},
-        {step:"meaning", key:"meaningful_passages", ready: () => Array.isArray(result.meaningful_passages) && !!result.poetic_economy}
-      ].filter(t => !t.ready());
-      if (!tasks.length) { newAnalysisRunning = false; return; }
+      loading.textContent = "A/B összehasonlítás folyamatban...";
       loading.style.display = "block";
-      const save = () => {
-        sessionStorage.setItem(NEW_CACHE_KEY, JSON.stringify({poem, result}));
-        renderNewResults(result);
-      };
-      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-      async function requestStep(task) {
-        let lastError;
-        for (let attempt = 1; attempt <= 2; attempt++) {
-          loading.textContent = `${task.step === "language" ? "Nyelvi működés – V2" : "Jelentésteremtő szövegrészek – V4"} elemzése folyamatban...` +
-            (attempt > 1 ? " Átmeneti hiba, újrapróbálkozás (2/2)..." : "");
-          try {
-            const res = await fetch(LANGUAGE_WORKER_URL, {
-              method: "POST", headers: {"Content-Type":"application/json"},
-              body: JSON.stringify({poem, step:task.step, ...(task.step === "language" ? {compression_score: (()=>{try{return JSON.parse(sessionStorage.getItem("analysis_language_v2_meaning_v5")||"{}").result?.language_quality?.compression_control?.received??null;}catch{return null;}})()} : {})})
-            });
-            const data = await res.json();
-            if (!res.ok || !data.ok) {
-              const details = data?.errors?.[task.step] || data?.error || `HTTP ${res.status}`;
-              const err = new Error(details);
-              err.retryable = res.status === 502 || res.status === 503 || res.status === 504 || res.status === 429;
-              throw err;
-            }
-            if (task.step === "language" && !data.result?.language_quality) throw new Error("Hiányzik a V2 eredménye.");
-            if (task.step === "meaning" && (!Array.isArray(data.result?.meaningful_passages) || !data.result?.poetic_economy)) throw new Error("Hiányzik a V4 eredménye.");
-            result[task.key] = data.result[task.key];
-            if (task.step === "meaning") result.poetic_economy = data.result.poetic_economy;
-            save();
-            return null;
-          } catch (err) {
-            lastError = err;
-            if (attempt === 2 || err.retryable === false || (err.retryable === undefined && !(err instanceof TypeError))) break;
-            await wait(5000);
-          }
-        }
-        return `${task.step === "language" ? "V2" : "V4"}: ${lastError?.message || "Ismeretlen hiba"}`;
-      }
       try {
-        // Nem párhuzamosítjuk a drága GPT-5 hívásokat: a már kész rész mentve marad.
-        const errors = [];
-        for (const task of tasks) {
-          const problem = await requestStep(task);
-          if (problem) errors.push(problem);
-        }
-        if (errors.length) {
-          error.textContent = "Az elemzés egy része nem készült el:\n" + errors.join("\n") +
-            "\nA következő belépéskor csak a hiányzó rész indul újra.";
-          error.style.display = "block";
-        }
-      } finally {
-        loading.style.display = "none";
-        newAnalysisRunning = false;
-      }
+        const response = await fetch(AB_WORKER_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({poem})});
+        const data = await response.json();
+        if (!response.ok || !data.ok || !["A","B"].includes(data.result?.group)) throw Error(data.error || `HTTP ${response.status}`);
+        sessionStorage.setItem(AB_CACHE_KEY, JSON.stringify({poem,result:data.result}));
+        renderAB(data.result);
+      } catch (e) {error.textContent = "A/B vizsgálat: " + (e.message || "Ismeretlen hiba"); error.style.display = "block";}
+      finally {loading.style.display = "none"; abRunning = false;}
     }
-
-    function showPreparedV2V4(poem) {
-      const cached = getStoredPack(NEW_CACHE_KEY);
-      const error = document.getElementById("newWorkerError");
-      const loading = document.getElementById("newWorkerLoading");
-      const result = cached?.poem === poem ? (cached.result || {}) : {};
-      renderNewResults(result);
-      let states = {};
-      try { states = JSON.parse(sessionStorage.getItem("analysis_language_v2_v4_status") || "{}"); } catch {}
-      const missing = [];
-      if (!result.language_quality) missing.push("V2: " + (states.language?.status === "error" ? "hiba – " + (states.language.detail || "ismeretlen") : states.language?.status === "running" ? "még dolgozik" : "nem indult vagy nincs eredmény"));
-      if (!Array.isArray(result.meaningful_passages) || !result.poetic_economy) missing.push("V4: " + (states.meaning?.status === "error" ? "hiba – " + (states.meaning.detail || "ismeretlen") : states.meaning?.status === "running" ? "még dolgozik" : "nem indult vagy nincs eredmény"));
-      loading.style.display = missing.some(x => x.includes("még dolgozik")) ? "block" : "none";
-      loading.textContent = "A V2/V4 vizsgálat még folyamatban van. Az indexen futó elemzés befejezéséig várj.";
-      error.style.display = missing.length && loading.style.display === "none" ? "block" : "none";
-      error.textContent = missing.join("\n");
-      return missing.length === 0;
-    }
-    // Másik lapról visszatérve a részben kész V2/V4 eredmény is frissüljön.
-    setInterval(() => {
+    document.getElementById("abRefresh").addEventListener("click", () => {
       const poem = sessionStorage.getItem("poem");
-      if (poem) showPreparedV2V4(poem);
-    }, 2000);
+      if (poem) runAB(poem, true);
+    });
 
     async function runExpressionAnalysis(forceRefresh = false) {
       const poem = sessionStorage.getItem("poem");
@@ -727,6 +576,7 @@ resultLayout.style.display = "grid";
       poemPreview.style.display = "block";
 
       renderPrevious(savedKind, savedStructure, savedRhythm, savedImages);
+      runAB(poem);
 
       hideError();
       hideInfo();
@@ -741,7 +591,7 @@ resultLayout.style.display = "grid";
     hideInfo();
 
     renderResult(savedExpression);
-    showPreparedV2V4(poem);
+    runAB(poem);
     sessionStorage.setItem("step_expression_done", Date.now().toString());
     showInfo("A korábbi kifejezésmód-eredmény betöltve.");
 
