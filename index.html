@@ -616,169 +616,59 @@ const INTERPRETATION_WORKER_URL = "https://ertelmezes-public.trknorbert76.worker
 const LANGUAGE_WORKER_URL = "https://verskritika-nyelvi-v2.trknorbert76.workers.dev/";
 const LANGUAGE_CACHE_KEY = "analysis_language_v2_meaning_v5";
 
-// A V2 és V4 már az indexen elkészül, a kifejezésmód csak megjeleníti őket.
-function findCompressionInfo(pack) {
-  const root = pack?.result || pack;
-  const visited = new Set();
-  function walk(obj, depth = 0) {
-    if (!obj || typeof obj !== "object" || depth > 7 || visited.has(obj)) return null;
-    visited.add(obj);
-    for (const [key, value] of Object.entries(obj)) {
-      const label = String(key).toLowerCase();
-      if (/(sűrítés|surites|compression)/i.test(label)) {
-        if (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 10) return {score:value};
-        if (value && typeof value === "object") {
-          const n = Number(value.score ?? value.value ?? value.rating ?? value.pont);
-          if (Number.isInteger(n) && n >= 1 && n <= 10) return {score:n, evidence: value.evidence || value.quote || ""};
-        }
-      }
-    }
-    for (const value of Object.values(obj)) {
-      const found = walk(value, depth + 1);
-      if (found) return found;
-    }
-    return null;
-  }
-  return walk(root);
-}
-
-// V4 a vers ellenőrzése után rögtön indul; V2 kizárólag a belső mérés kész eredményére vár.
-// A két kérés egymástól független: egyik időtúllépése nem késlelteti a másikat.
-let languageMeaningRunId = 0;
-const V2V4_STATUS_KEY = "analysis_language_v2_v4_status";
-function getV2V4Status() {
-  try { return JSON.parse(sessionStorage.getItem(V2V4_STATUS_KEY) || "{}"); } catch { return {}; }
-}
-function setV2V4Status(step, status, detail = "") {
-  const current = getV2V4Status();
-  current[step] = {status, detail, updated: Date.now()};
-  sessionStorage.setItem(V2V4_STATUS_KEY, JSON.stringify(current));
-  updateExpressionCombinedUi();
-}
+// Az A/B vizsgálat a régi V2/V4 helyett fut, önállóan, a háttérben.
+const AB_WORKER_URL = "https://verskritika-nyelvi-v2.trknorbert76.workers.dev/";
+const AB_CACHE_KEY = "analysis_ab_pairs_v1";
+const AB_STATUS_KEY = "analysis_ab_status_v1";
+let languageMeaningRunId = 0; // új vers esetén a korábbi háttérkérés érvénytelen
+function abCache() { try { return JSON.parse(sessionStorage.getItem(AB_CACHE_KEY) || "{}"); } catch { return {}; } }
+function abStatus() { try { return JSON.parse(sessionStorage.getItem(AB_STATUS_KEY) || "{}"); } catch { return {}; } }
 function expressionComplete() {
   const poem = sessionStorage.getItem("poem");
-  let cache = {};
-  try { cache = JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch {}
-  return !!sessionStorage.getItem("step_expression_done") && cache.poem === poem &&
-    !!cache.result?.language_quality && Array.isArray(cache.result?.meaningful_passages) && !!cache.result?.poetic_economy;
+  const cache = abCache();
+  return !!sessionStorage.getItem("step_expression_done") && cache.poem === poem && ["A","B"].includes(cache.result?.group);
 }
 function updateExpressionCombinedUi() {
   const step = pipeline?.find?.(s => s.key === "expression");
   if (!step) return;
-  const btn = document.getElementById(step.buttonId);
-  const box = document.getElementById(step.boxId);
-  const note = document.getElementById(step.noteId);
+  const btn = document.getElementById(step.buttonId), box = document.getElementById(step.boxId), note = document.getElementById(step.noteId);
   if (!btn || !box || !note) return;
-  if (expressionComplete()) {
-    setStepDone(step);
-    if (sessionStorage.getItem("analysis_running") !== "1" && sessionStorage.getItem("step_summary_done")) showOk("Minden elemzés elkészült. Beléphetsz bármelyik oldalra.");
-    return;
-  }
+  if (expressionComplete()) { setStepDone(step); return; }
   const original = !!sessionStorage.getItem("step_expression_done");
-  const statuses = getV2V4Status();
-  if (!original && !statuses.language && !statuses.meaning) return;
-  const missing = [];
-  if (!original) missing.push("eredeti Kifejezésmód");
-  const cache = (() => { try { return JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch { return {}; } })();
-  if (!cache.result?.language_quality || cache.poem !== sessionStorage.getItem("poem")) missing.push("V2");
-  if (!Array.isArray(cache.result?.meaningful_passages) || !cache.result?.poetic_economy || cache.poem !== sessionStorage.getItem("poem")) missing.push("V4");
-  const failed = ["language", "meaning"].filter(k => statuses[k]?.status === "error").map(k => k === "language" ? "V2" : "V4");
+  const status = abStatus();
+  if (!original && !status.status) return;
   btn.disabled = true;
   btn.classList.remove("done"); btn.classList.add("loading");
   box.classList.remove("done", "real"); box.classList.add("loading");
   const fill = box.querySelector(".progressFill");
-  if (fill) { fill.style.transition = "width .4s ease"; fill.style.width = original ? "85%" : "55%"; }
-  btn.textContent = failed.length ? "Kifejezésmód – V2/V4 hiba" : "Kifejezésmód folyamatban";
-  note.textContent = failed.length ? "Hibás: " + failed.join(", ") + ". Részletek a Kifejezésmód oldalon." : "Még vár: " + missing.join(", ") + ".";
+  if (fill) fill.style.width = original ? "85%" : "55%";
+  btn.textContent = status.status === "error" ? "Kifejezésmód – A/B hiba" : "Kifejezésmód folyamatban";
+  note.textContent = status.status === "error" ? "A/B hiba: " + status.detail : "Még vár: " + (!original ? "Kifejezésmód, " : "") + "A/B vizsgálat.";
 }
-
-
-async function reviewV2V4Overlaps(poem, runId) {
-  if (runId !== languageMeaningRunId) return;
-  let cache={};try{cache=JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY)||'{}');}catch{}
-  if(cache.poem!==poem)return;
-  const v2=cache.result?.language_quality?.overexplanation?.passages||[];
-  const v4=cache.result?.meaningful_passages||[];
-  const conflicts=[];
-  for(const a of v2)for(const b of v4){
-    if(a.start_line<=b.end_line&&b.start_line<=a.end_line){
-      conflicts.push({v2_lines:[a.start_line,a.end_line],v4_lines:[b.start_line,b.end_line],v2_reason:a.reason,v4_meaning:b.added_meaning,v4_evidence:b.evidence});
-    }
-  }
-  if(!conflicts.length){cache.result.crosscheck={conflicts:[],reviews:[]};sessionStorage.setItem(LANGUAGE_CACHE_KEY,JSON.stringify(cache));return;}
-  setV2V4Status('crosscheck','running');
-  try{
-    const response=await fetch(LANGUAGE_WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({poem,step:'crosscheck',conflicts})});
-    const data=await response.json();if(!response.ok||!data.ok)throw Error(data.error||'Összevetési hiba');
-    if(runId!==languageMeaningRunId)return;
-    const fresh=JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY)||'{}');if(fresh.poem!==poem)return;
-    fresh.result.crosscheck=data.result.crosscheck;
-    sessionStorage.setItem(LANGUAGE_CACHE_KEY,JSON.stringify(fresh));
-    setV2V4Status('crosscheck','done');appendRunnerInfo('V2/V4 ellentmondások ellenőrzése kész.');
-  }catch(e){if(runId===languageMeaningRunId){setV2V4Status('crosscheck','error',String(e.message||e));appendRunnerInfo('V2/V4 összevetés nem sikerült: '+e.message);}}
+function setABStatus(status, detail = "") {
+  sessionStorage.setItem(AB_STATUS_KEY, JSON.stringify({status, detail, updated:Date.now()}));
+  updateExpressionCombinedUi();
 }
-
-function startLanguageMeaningTask(poem, step, compression = null, runId = languageMeaningRunId) {
-  const key = step === "language" ? "language_quality" : "meaningful_passages";
-  const label = step === "language" ? "V2" : "V4";
-  setV2V4Status(step, "running");
-  appendRunnerInfo(label + " elindult a háttérben.");
+function startABAnalysis(poem, runId = languageMeaningRunId) {
+  const cached = abCache();
+  if (cached.poem === poem && ["A","B"].includes(cached.result?.group)) { setABStatus("done"); return Promise.resolve(cached.result); }
+  setABStatus("running");
+  appendRunnerInfo("A/B betoldásvizsgálat elindult a háttérben.");
   return (async () => {
     try {
-      const payload = { poem, step };
-      if (step === "language" && compression) {
-        payload.compression_score = compression.score;
-        if (compression.evidence) payload.compression_evidence = compression.evidence;
-      }
-      const response = await fetch(LANGUAGE_WORKER_URL, {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
-      });
+      const response = await fetch(AB_WORKER_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({poem})});
       const data = await response.json();
-      if (!response.ok || !data.ok || data.result?.[key] == null || (step === "meaning" && !data.result?.poetic_economy)) {
-        throw new Error(data?.errors?.[step] || data?.error || "Hiányzó eredmény");
-      }
-      // Régebbi futás nem írhatja felül egy új vers eredményét.
-      if (runId !== languageMeaningRunId) return null;
-      let cache = {};
-      try { cache = JSON.parse(sessionStorage.getItem(LANGUAGE_CACHE_KEY) || "{}"); } catch (_) {}
-      const result = cache.poem === poem ? (cache.result || {}) : {};
-      result[key] = data.result[key];
-       if (step === "meaning") result.poetic_economy = data.result.poetic_economy;
-      sessionStorage.setItem(LANGUAGE_CACHE_KEY, JSON.stringify({poem, result}));
-      sessionStorage.removeItem("analysis_language_" + step + "_error");
-      const otherError = sessionStorage.getItem("analysis_language_" + (step === "language" ? "meaning" : "language") + "_error");
-      if (otherError) sessionStorage.setItem("analysis_language_v2_v4_errors", otherError);
-      else sessionStorage.removeItem("analysis_language_v2_v4_errors");
-      setV2V4Status(step, "done");
-      appendRunnerInfo(label + " elkészült.");
-      return data.result[key];
-    } catch (e) {
-      if (runId !== languageMeaningRunId) return null;
-      const message = step + ": " + String(e.message || e);
-      sessionStorage.setItem("analysis_language_" + step + "_error", message);
-      const otherError = sessionStorage.getItem("analysis_language_" + (step === "language" ? "meaning" : "language") + "_error");
-      sessionStorage.setItem("analysis_language_v2_v4_errors", [message, otherError].filter(Boolean).join("; "));
-      setV2V4Status(step, "error", message);
-      appendRunnerInfo(label + " hiba: " + message);
-      return null; // A fő elemzési láncot nem állítjuk le.
+      if (!response.ok || !data.ok || !["A","B"].includes(data.result?.group)) throw new Error(data.error || "Hiányzó A/B eredmény");
+      if (runId !== languageMeaningRunId || sessionStorage.getItem("poem") !== poem) return null;
+      sessionStorage.setItem(AB_CACHE_KEY, JSON.stringify({poem, result:data.result}));
+      setABStatus("done");
+      appendRunnerInfo("A/B vizsgálat kész: " + data.result.group + ".");
+      return data.result;
+    } catch(e) {
+      if (runId === languageMeaningRunId) {setABStatus("error", String(e.message || e)); appendRunnerInfo("A/B vizsgálat hiba: " + String(e.message || e));}
+      return null; // A többi elemzést nem állítja le.
     }
   })();
-}
-
-function startLanguageWhenInnerReady(poem, innerPromise, runId) {
-  return innerPromise.then(inner => {
-    if (runId !== languageMeaningRunId) return null;
-    const compression = findCompressionInfo(inner);
-    appendRunnerInfo("Belső mérés kész; V2 azonnal indul" + (compression ? " (sűrítés: " + compression.score + "/10)." : " (sűrítési adat nem található)."));
-    return startLanguageMeaningTask(poem, "language", compression, runId);
-  }).catch(e => {
-    if (runId === languageMeaningRunId) {
-      setV2V4Status("language", "error", String(e.message || e));
-      appendRunnerInfo("V2 nem indult: a belső mérés sikertelen (" + String(e.message || e) + ").");
-    }
-    return null;
-  });
 }
 
 const INNER_WORKER_URL = "https://belsomeres-public.trknorbert76.workers.dev";
@@ -1476,8 +1366,8 @@ btn.onclick = () => {
 
 function clearStepStorage() {
   languageMeaningRunId++;
-  sessionStorage.removeItem(LANGUAGE_CACHE_KEY);
-  sessionStorage.removeItem(V2V4_STATUS_KEY);
+  sessionStorage.removeItem(AB_CACHE_KEY);
+  sessionStorage.removeItem(AB_STATUS_KEY);
   sessionStorage.removeItem("analysis_language_v2_v4_errors");
   sessionStorage.removeItem("analysis_language_language_error");
   sessionStorage.removeItem("analysis_language_meaning_error");
@@ -2398,9 +2288,8 @@ secretContest.addEventListener("click", async () => {
     sessionStorage.setItem("poem", poem);
     sessionStorage.setItem("poemText", poem);
 
-    // V4 rögtön indul, nem vár a felismerésre vagy a belső mérésre.
-    const v2v4RunId = languageMeaningRunId;
-    const meaningPromise = startLanguageMeaningTask(poem, "meaning", null, v2v4RunId);
+    // Az A/B azonnal elindul.
+    const abPromise = startABAnalysis(poem, languageMeaningRunId);
 
     // új azonosító
     const analysisId = crypto.randomUUID();
@@ -2666,9 +2555,8 @@ sessionStorage.setItem("analysis_running", "1");
     sessionStorage.setItem("poem", poem);
     sessionStorage.setItem("poemText", poem);
 
-    // V4 azonnal indul a sikeres versellenőrzés után; V2 a belső mérésre vár.
-    const v2v4RunId = languageMeaningRunId;
-    const meaningPromise = startLanguageMeaningTask(poem, "meaning", null, v2v4RunId);
+    // A/B vizsgálat a sikeres versellenőrzés után azonnal indul.
+    const abPromise = startABAnalysis(poem, languageMeaningRunId);
 
    // FORMAI ELŐELEMZŐ FUTTATÁSA A HÁTTÉRBEN
 await new Promise((resolve) => {
@@ -2773,9 +2661,7 @@ const basePrevious = {
    const depthPromise = startDepthAnalysis(poem);
 
 const innerPromise = startInnerMeasure(poem, kind);
-const languagePromise = startLanguageWhenInnerReady(poem, innerPromise, v2v4RunId);
-Promise.allSettled([meaningPromise,languagePromise]).then(()=>reviewV2V4Overlaps(poem,v2v4RunId));
-// meaningPromise és languagePromise külön fut; nem blokkolják az Ellenőrt.
+// Az A/B már párhuzamosan fut; nem blokkolja az Ellenőrt.
 
    const wolkerPromise = startWolkerAnalysis(poem);
 
@@ -2947,7 +2833,7 @@ if (consumeData.paid_uses !== undefined) {
 userTopBox.textContent =
   `${localStorage.getItem("user_email")} | Ingyenes: ${consumeData.free_uses ?? 0} | Fizetős: ${consumeData.paid_uses ?? 0}`;
 
-    showOk(expressionComplete() ? "Minden elemzés elkészült. Beléphetsz bármelyik oldalra." : "A fő elemzés elkészült; a Kifejezésmód még a V2/V4 eredményére vár.");
+    showOk(expressionComplete() ? "Minden elemzés elkészült. Beléphetsz bármelyik oldalra." : "A fő elemzés elkészült; a Kifejezésmód még az A/B eredményére vár.");
    introText.textContent = "Elemzés elkészült.";
 
    logoutBtn.classList.remove("secondary");
@@ -3017,7 +2903,7 @@ newPoemBtn.classList.remove("secondary");
 newPoemBtn.classList.add("goldAction");
 
 
-  showOk(expressionComplete() ? "Minden elemzés elkészült. Beléphetsz bármelyik oldalra." : "A fő elemzés elkészült; a Kifejezésmód még a V2/V4 eredményére vár.");
+  showOk(expressionComplete() ? "Minden elemzés elkészült. Beléphetsz bármelyik oldalra." : "A fő elemzés elkészült; a Kifejezésmód még az A/B eredményére vár.");
 }
 
 restoreFinishedUi();
